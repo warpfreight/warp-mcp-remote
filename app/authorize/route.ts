@@ -74,7 +74,8 @@ export async function POST(req: Request) {
   const password = String(form.get("password") ?? "");
   if (!email || !password) return page(p, "Enter your email and password.");
 
-  const r = await loginAndGetKey(email, password);
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || undefined;
+  const r = await loginAndGetKey(email, password, ip);
   if (!r.ok) return page(p, r.error);
 
   const code = seal<AuthCode>({ t: "code", key: r.key, cc: p.code_challenge, ru: p.redirect_uri, ci: p.client_id, exp: now() + CODE_TTL });
