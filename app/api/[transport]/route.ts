@@ -7,6 +7,16 @@ import { unseal, originOf, now, type AccessToken } from "@/lib/oauth";
 import { registerTools } from "warp-agent-mcp/dist/tools.js";
 // @ts-ignore
 import { WarpClient } from "warp-agent-mcp/dist/client.js";
+// Widget card resources (the inline cards). Registered below — mirrors
+// warp-agent-mcp/dist/index.js. Deep imports; package ships no exports map.
+// @ts-ignore
+import { QUOTE_CARD_RESOURCE_URI, QUOTE_CARD_MCP_RESOURCE_URI, MCP_APP_MIME_TYPE, quoteCardTemplate, quoteCardMcpTemplate } from "warp-agent-mcp/dist/widgets/quote-card.js";
+// @ts-ignore
+import { BOOKINGS_CARD_RESOURCE_URI, BOOKINGS_CARD_MCP_RESOURCE_URI, bookingsCardTemplate, bookingsCardMcpTemplate } from "warp-agent-mcp/dist/widgets/bookings-card.js";
+// @ts-ignore
+import { BATCH_QUOTE_CARD_RESOURCE_URI, BATCH_QUOTE_CARD_MCP_RESOURCE_URI, batchQuoteCardTemplate, batchQuoteCardMcpTemplate } from "warp-agent-mcp/dist/widgets/batch-quote-card.js";
+// @ts-ignore
+import { BATCH_BOOK_CARD_RESOURCE_URI, BATCH_BOOK_CARD_MCP_RESOURCE_URI, batchBookCardTemplate, batchBookCardMcpTemplate } from "warp-agent-mcp/dist/widgets/batch-book-card.js";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -21,7 +31,37 @@ const handler = createMcpHandler(
   (server: unknown) => {
     const client = new WarpClient(WARP_API_URL, getApiKey);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    registerTools(server as any, client as any, getApiKey);
+    const s = server as any;
+    registerTools(s, client as any, getApiKey);
+    // Widget card resources. registerTools tags each tool result with one of these
+    // resource URIs; without the resources registered, the client can't fetch the card
+    // HTML and shows "There was a problem displaying content from Warp". Mirrors
+    // warp-agent-mcp/dist/index.js exactly — two host variants per card (text/html for
+    // ChatGPT Apps, MCP_APP_MIME_TYPE for Claude MCP Apps).
+    s.registerResource("warp-quote-card", QUOTE_CARD_RESOURCE_URI,
+      { description: "Inline quote card after warp_van_quote / warp_box_truck_quote / warp_ftl_quote / warp_ltl_quote.", mimeType: "text/html" },
+      async () => ({ contents: [{ uri: QUOTE_CARD_RESOURCE_URI, mimeType: "text/html", text: quoteCardTemplate() }] }));
+    s.registerResource("warp-quote-card-mcp", QUOTE_CARD_MCP_RESOURCE_URI,
+      { description: "Inline quote card (MCP Apps) after warp_van_quote / warp_box_truck_quote / warp_ftl_quote / warp_ltl_quote.", mimeType: MCP_APP_MIME_TYPE },
+      async () => ({ contents: [{ uri: QUOTE_CARD_MCP_RESOURCE_URI, mimeType: MCP_APP_MIME_TYPE, text: quoteCardMcpTemplate() }] }));
+    s.registerResource("warp-bookings-card", BOOKINGS_CARD_RESOURCE_URI,
+      { description: "Inline shipments card after warp_list_bookings.", mimeType: "text/html" },
+      async () => ({ contents: [{ uri: BOOKINGS_CARD_RESOURCE_URI, mimeType: "text/html", text: bookingsCardTemplate() }] }));
+    s.registerResource("warp-bookings-card-mcp", BOOKINGS_CARD_MCP_RESOURCE_URI,
+      { description: "Inline shipments card (MCP Apps) after warp_list_bookings.", mimeType: MCP_APP_MIME_TYPE },
+      async () => ({ contents: [{ uri: BOOKINGS_CARD_MCP_RESOURCE_URI, mimeType: MCP_APP_MIME_TYPE, text: bookingsCardMcpTemplate() }] }));
+    s.registerResource("warp-batch-quote-card", BATCH_QUOTE_CARD_RESOURCE_URI,
+      { description: "Inline batch-quote card after warp_batch_quote.", mimeType: "text/html" },
+      async () => ({ contents: [{ uri: BATCH_QUOTE_CARD_RESOURCE_URI, mimeType: "text/html", text: batchQuoteCardTemplate() }] }));
+    s.registerResource("warp-batch-quote-card-mcp", BATCH_QUOTE_CARD_MCP_RESOURCE_URI,
+      { description: "Inline batch-quote card (MCP Apps) after warp_batch_quote.", mimeType: MCP_APP_MIME_TYPE },
+      async () => ({ contents: [{ uri: BATCH_QUOTE_CARD_MCP_RESOURCE_URI, mimeType: MCP_APP_MIME_TYPE, text: batchQuoteCardMcpTemplate() }] }));
+    s.registerResource("warp-batch-book-card", BATCH_BOOK_CARD_RESOURCE_URI,
+      { description: "Inline batch-book progress card after warp_batch_book.", mimeType: "text/html" },
+      async () => ({ contents: [{ uri: BATCH_BOOK_CARD_RESOURCE_URI, mimeType: "text/html", text: batchBookCardTemplate() }] }));
+    s.registerResource("warp-batch-book-card-mcp", BATCH_BOOK_CARD_MCP_RESOURCE_URI,
+      { description: "Inline batch-book progress card (MCP Apps) after warp_batch_book.", mimeType: MCP_APP_MIME_TYPE },
+      async () => ({ contents: [{ uri: BATCH_BOOK_CARD_MCP_RESOURCE_URI, mimeType: MCP_APP_MIME_TYPE, text: batchBookCardMcpTemplate() }] }));
   },
   { serverInfo: { name: "warp-agent-mcp", version: "0.13.2" } },
   { basePath: "/api", maxDuration: 60 },
@@ -59,6 +99,13 @@ function warpKeyFrom(cred: string): string {
 }
 
 const withAuth = (req: Request): Response | Promise<Response> => {
+  // Keep-warm probe (hit by a Vercel Cron every few minutes). Returns immediately,
+  // but booting this instance loads the heavy MCP module at module-init, so real
+  // first-calls don't pay a cold start — which otherwise exceeds Claude's tool-call
+  // timeout and surfaces as "Unable to reach Warp".
+  if (new URL(req.url).searchParams.get("warm") === "1") {
+    return new Response("ok", { status: 200, headers: { "Cache-Control": "no-store" } });
+  }
   const cred = credentialFrom(req);
   if (!cred) {
     // No credential → tell the client where to authenticate (triggers Claude's
