@@ -34,6 +34,20 @@ const handler = createMcpHandler(
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const s = server as any;
     registerTools(s, client as any, getApiKey);
+    // Anthropic directory req #2: every tool needs a read/destructive hint. The
+    // package leaves two without one — patch them here (annotations are metadata;
+    // tool handlers are untouched). Best-effort: never block startup on this.
+    try {
+      const reg = (s as { _registeredTools?: Record<string, { annotations?: Record<string, unknown>; update?: (c: Record<string, unknown>) => void }> })._registeredTools;
+      const setHint = (name: string, ann: Record<string, unknown>) => {
+        const t = reg?.[name];
+        if (!t) return;
+        if (typeof t.update === "function") t.update({ annotations: { ...(t.annotations ?? {}), ...ann } });
+        else t.annotations = { ...(t.annotations ?? {}), ...ann };
+      };
+      setHint("warp_login", { readOnlyHint: false });
+      setHint("warp_save_load_template", { readOnlyHint: false });
+    } catch { /* best-effort */ }
     // Widget card resources. registerTools tags each tool result with one of these
     // resource URIs; without the resources registered, the client can't fetch the card
     // HTML and shows "There was a problem displaying content from Warp". Mirrors
@@ -92,6 +106,16 @@ function credentialFrom(req: Request): string | null {
   return null;
 }
 
+/** Origin allowlist (DNS-rebinding protection). A request with no Origin is a
+ *  server-to-server call (Claude's backend) and is allowed; Bearer-token auth is
+ *  the primary control. A browser request from an untrusted Origin is rejected. */
+function isAllowedOrigin(origin: string): boolean {
+  let host: string;
+  try { host = new URL(origin).hostname; } catch { return false; }
+  const ok = (d: string) => host === d || host.endsWith("." + d);
+  return ok("claude.ai") || ok("claude.com") || ok("anthropic.com") || ok("chatgpt.com") || ok("openai.com") || ok("wearewarp.com") || host === "localhost" || host === "127.0.0.1";
+}
+
 const withAuth = async (req: Request): Promise<Response> => {
   // Keep-warm probe (hit by a Vercel Cron every few minutes). Returns immediately,
   // but booting this instance loads the heavy MCP module at module-init, so real
@@ -99,6 +123,14 @@ const withAuth = async (req: Request): Promise<Response> => {
   // timeout and surfaces as "Unable to reach Warp".
   if (new URL(req.url).searchParams.get("warm") === "1") {
     return new Response("ok", { status: 200, headers: { "Cache-Control": "no-store" } });
+  }
+  // Cross-origin / DNS-rebinding protection.
+  const origin = req.headers.get("origin");
+  if (origin && !isAllowedOrigin(origin)) {
+    return new Response(JSON.stringify({ error: "forbidden", error_description: "Origin not allowed." }), {
+      status: 403,
+      headers: { "Content-Type": "application/json" },
+    });
   }
   const cred = credentialFrom(req);
   if (!cred) {
