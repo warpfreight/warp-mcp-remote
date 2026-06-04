@@ -78,7 +78,20 @@ const handler = createMcpHandler(
       { description: "Inline batch-book progress card (MCP Apps) after warp_batch_book.", mimeType: MCP_APP_MIME_TYPE },
       async () => ({ contents: [{ uri: BATCH_BOOK_CARD_MCP_RESOURCE_URI, mimeType: MCP_APP_MIME_TYPE, text: batchBookCardMcpTemplate() }] }));
   },
-  { serverInfo: { name: "warp-agent-mcp", version: "0.13.2" } },
+  {
+    // MCP 2025-11-25 (SEP-973) `icons`: clients that render server icons (Claude
+    // Desktop, future claude.ai) pick these up post-connect. The connector-list icon
+    // shown *before* auth comes from the domain favicon (/icon.svg, /favicon.ico),
+    // which is the primary channel — this is belt-and-suspenders for spec-aware clients.
+    serverInfo: {
+      name: "warp-agent-mcp",
+      version: "0.13.2",
+      icons: [
+        { src: "https://mcp.wearewarp.com/icon.png", mimeType: "image/png", sizes: ["512x512"] },
+        { src: "https://mcp.wearewarp.com/icon.svg", mimeType: "image/svg+xml", sizes: ["any"] },
+      ],
+    } as unknown as { name: string; version: string },
+  },
   { basePath: "/api", maxDuration: 60 },
 );
 

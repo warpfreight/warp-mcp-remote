@@ -1,6 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1080" fill="none" preserveAspectRatio="xMidYMid meet" version="1.2" baseProfile="tiny-ps" xml:space="preserve"><title>Warp Logo</title>
-<g clip-path="url(#clip0_4793_23898)">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 1080" fill="none" preserveAspectRatio="xMidYMid meet"><title>Warp</title>
 <rect width="1080" height="1080" fill="#121212"/>
+<g transform="translate(542 539.5) scale(1.28) translate(-542 -539.5)">
 <path d="M921 646H163V433H921V646ZM179.147 630.22H905.083V449.069H179.147V630.22Z" fill="#00FF33"/>
 <path d="M508.668 494.324L544.884 584.495H566.395L530.179 494.324H508.668Z" fill="#00FF33"/>
 <path d="M410.984 584.495H432.495L468.711 494.324H447.2L410.984 584.495Z" fill="#00FF33"/>
@@ -10,9 +10,4 @@
 <path d="M498.402 520.695H479.086V541.385H498.402V520.695Z" fill="#00FF33"/>
 <path d="M479.086 584.498H498.402V564.039H479.086V584.498Z" fill="#00FF33"/>
 </g>
-<defs>
-<clipPath id="clip0_4793_23898">
-<rect width="1080" height="1080" fill="white"/>
-</clipPath>
-</defs>
 </svg>
