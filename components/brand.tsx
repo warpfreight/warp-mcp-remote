@@ -30,6 +30,7 @@ export function Shell({ children }: { children: ReactNode }) {
           <nav className="nav">
             <a href="/docs">Docs</a>
             <a href="/privacy">Privacy</a>
+            <a href="/terms">Terms</a>
             <a href={INSTALL_GUIDE}>Install guide ↗</a>
           </nav>
         </header>
@@ -39,6 +40,7 @@ export function Shell({ children }: { children: ReactNode }) {
           <span style={{ display: "flex", gap: 16 }}>
             <a href="/docs" style={{ color: "var(--muted)", textDecoration: "none" }}>Docs</a>
             <a href="/privacy" style={{ color: "var(--muted)", textDecoration: "none" }}>Privacy</a>
+            <a href="/terms" style={{ color: "var(--muted)", textDecoration: "none" }}>Terms</a>
           </span>
         </footer>
       </div>
