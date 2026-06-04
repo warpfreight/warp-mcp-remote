@@ -59,9 +59,14 @@ export const now = () => Math.floor(Date.now() / 1000);
 export type ClientToken = { t: "client"; redirect_uris: string[]; iat: number };
 export type AuthCode = { t: "code"; key: string; cc: string; ru: string; ci: string; exp: number };
 export type AccessToken = { t: "at"; key: string; exp: number };
+export type RefreshToken = { t: "rt"; key: string; exp: number };
 
-export const ACCESS_TTL = 60 * 60 * 24 * 30; // 30 days
-export const CODE_TTL = 300; // 5 min
+// The access token is sent on every MCP request, so keep it short-lived; the
+// refresh token (only ever sent to /token) carries continuity. Compliant clients
+// rotate via the refresh_token grant, bounding how long a leaked access token works.
+export const ACCESS_TTL = 60 * 60 * 24 * 7; // 7 days
+export const REFRESH_TTL = 60 * 60 * 24 * 30; // 30 days
+export const CODE_TTL = 60; // 60s — tight, near-one-time window for the auth code
 
 /** The public base URL of this deployment, derived from the request host. */
 export function originOf(req: Request): string {

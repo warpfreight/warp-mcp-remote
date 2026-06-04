@@ -36,6 +36,17 @@ function validate(p: P): { ok: boolean; error?: string } {
 
 function page(p: P, errorMsg?: string): Response {
   const hidden = FIELDS.map((f) => `<input type="hidden" name="${f}" value="${esc(p[f])}">`).join("");
+  // Show the user *where* the token will go + give them an explicit Deny path.
+  // redirect_uri is already validated against the registered client before page() runs.
+  let dest = p.redirect_uri;
+  let deny = "";
+  try {
+    const u = new URL(p.redirect_uri);
+    dest = u.host;
+    u.searchParams.set("error", "access_denied");
+    if (p.state) u.searchParams.set("state", p.state);
+    deny = u.toString();
+  } catch { /* invalid redirect_uri — already rejected by validate() */ }
   const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Sign in to Warp</title></head>
 <body style="margin:0;background:#141c2b;color:#e2e8f0;font-family:system-ui,-apple-system,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box">
@@ -51,7 +62,10 @@ function page(p: P, errorMsg?: string): Response {
       <path d="M275.219 131.615H292.04V113.84H275.219V131.615Z" fill="#00FF33"/>
     </svg>
     <h1 style="font-size:21px;font-weight:700;letter-spacing:-.01em;margin:0 0 8px;text-align:center">Sign in to connect</h1>
-    <p style="font-size:13.5px;color:#94a3b8;line-height:1.6;margin:0 0 24px;text-align:center">Log in with your Warp account so this assistant can quote, book, and track your freight. Your password is sent only to Warp — never to the assistant.</p>
+    <p style="font-size:13.5px;color:#94a3b8;line-height:1.6;margin:0 0 16px;text-align:center">Log in with your Warp account so this assistant can quote, book, and track your freight on your behalf. Booking charges the card on file at Warp. Your password is sent only to Warp — never to the assistant.</p>
+    <div style="display:flex;align-items:center;justify-content:center;gap:6px;background:#141c2b;border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:9px 12px;margin:0 0 22px;font-size:12.5px">
+      <span style="color:#64748b">Authorizing access for</span><strong style="color:#e2e8f0;word-break:break-all">${esc(dest)}</strong>
+    </div>
     ${errorMsg ? `<div style="background:rgba(229,72,77,.12);border:1px solid rgba(229,72,77,.4);color:#f8a8aa;border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:14px">${esc(errorMsg)}</div>` : ""}
     <form method="POST" action="/authorize">
       ${hidden}
@@ -59,8 +73,9 @@ function page(p: P, errorMsg?: string): Response {
       <input name="email" type="email" required autofocus style="width:100%;box-sizing:border-box;background:#141c2b;border:1px solid rgba(255,255,255,.12);border-radius:8px;color:#e2e8f0;padding:10px 12px;font-size:14px;margin-bottom:14px">
       <label style="display:block;font-size:12px;color:#94a3b8;margin-bottom:6px">Password</label>
       <input name="password" type="password" required style="width:100%;box-sizing:border-box;background:#141c2b;border:1px solid rgba(255,255,255,.12);border-radius:8px;color:#e2e8f0;padding:10px 12px;font-size:14px;margin-bottom:20px">
-      <button type="submit" style="width:100%;background:#00FA8A;color:#07120D;border:none;border-radius:8px;height:44px;font-size:14px;font-weight:700;cursor:pointer">Sign in</button>
+      <button type="submit" style="width:100%;background:#00FA8A;color:#07120D;border:none;border-radius:8px;height:44px;font-size:14px;font-weight:700;cursor:pointer">Sign in &amp; authorize</button>
     </form>
+    ${deny ? `<a href="${esc(deny)}" style="display:block;text-align:center;margin-top:12px;font-size:13px;color:#94a3b8;text-decoration:none">Cancel</a>` : ""}
     <p style="font-size:12.5px;color:#94a3b8;line-height:1.55;text-align:center;margin:18px 0 0">
       Don't have a Warp account?<br>
       <a href="https://www.wearewarp.com/agents/account" target="_blank" rel="noopener noreferrer" style="color:#00FA8A;font-weight:600;text-decoration:none">Create one at wearewarp.com/agents/account &rarr;</a>
