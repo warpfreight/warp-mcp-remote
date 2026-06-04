@@ -1,6 +1,7 @@
 import { createMcpHandler } from "mcp-handler";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { unseal, originOf, now, type AccessToken } from "@/lib/oauth";
+import { isRevoked } from "@/lib/kv";
 // Deep-import the LIVE published tool definitions (pinned to warp-agent-mcp@0.13.2).
 // No vendoring — bump the dependency to pick up new tool versions.
 // @ts-ignore — package ships dist/*.js without type declarations
@@ -91,14 +92,7 @@ function credentialFrom(req: Request): string | null {
   return null;
 }
 
-/** Resolve to a Warp API key: OAuth access token → embedded key; else treat as raw key. */
-function warpKeyFrom(cred: string): string {
-  const at = unseal<AccessToken>(cred);
-  if (at && at.t === "at" && at.exp > now()) return at.key;
-  return cred;
-}
-
-const withAuth = (req: Request): Response | Promise<Response> => {
+const withAuth = async (req: Request): Promise<Response> => {
   // Keep-warm probe (hit by a Vercel Cron every few minutes). Returns immediately,
   // but booting this instance loads the heavy MCP module at module-init, so real
   // first-calls don't pay a cold start — which otherwise exceeds Claude's tool-call
@@ -119,7 +113,24 @@ const withAuth = (req: Request): Response | Promise<Response> => {
       },
     });
   }
-  return keyStore.run(warpKeyFrom(cred), () => handler(req));
+  // Resolve the credential to a Warp key. OAuth access tokens are sealed + revocable;
+  // a raw key (x-warp-key / Smithery config) is passed straight through.
+  const at = unseal<AccessToken>(cred);
+  let warpKey = cred;
+  if (at && at.t === "at" && at.exp > now()) {
+    if (await isRevoked(at.jti)) {
+      const base = originOf(req);
+      return new Response(JSON.stringify({ error: "invalid_token", error_description: "Token has been revoked." }), {
+        status: 401,
+        headers: {
+          "Content-Type": "application/json",
+          "WWW-Authenticate": `Bearer error="invalid_token", resource_metadata="${base}/.well-known/oauth-protected-resource"`,
+        },
+      });
+    }
+    warpKey = at.key;
+  }
+  return keyStore.run(warpKey, () => handler(req));
 };
 
 export { withAuth as GET, withAuth as POST, withAuth as DELETE };

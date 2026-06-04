@@ -55,11 +55,14 @@ export function verifyPkceS256(verifier: string, challenge: string): boolean {
 
 export const now = () => Math.floor(Date.now() / 1000);
 
+/** Random 128-bit id (base64url) — per-token jti for KV single-use claiming + revocation. */
+export const randomId = () => crypto.randomBytes(16).toString("base64url");
+
 // ── Token type shapes ──────────────────────────────────────────────
 export type ClientToken = { t: "client"; redirect_uris: string[]; iat: number };
-export type AuthCode = { t: "code"; key: string; cc: string; ru: string; ci: string; exp: number };
-export type AccessToken = { t: "at"; key: string; exp: number };
-export type RefreshToken = { t: "rt"; key: string; exp: number };
+export type AuthCode = { t: "code"; key: string; cc: string; ru: string; ci: string; exp: number; jti: string };
+export type AccessToken = { t: "at"; key: string; exp: number; jti: string };
+export type RefreshToken = { t: "rt"; key: string; exp: number; jti: string };
 
 // The access token is sent on every MCP request, so keep it short-lived; the
 // refresh token (only ever sent to /token) carries continuity. Compliant clients

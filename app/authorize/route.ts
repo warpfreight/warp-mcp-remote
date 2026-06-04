@@ -1,4 +1,4 @@
-import { unseal, seal, now, CODE_TTL, type ClientToken, type AuthCode } from "@/lib/oauth";
+import { unseal, seal, now, CODE_TTL, randomId, type ClientToken, type AuthCode } from "@/lib/oauth";
 import { loginAndGetKey } from "@/lib/warpAuth";
 
 export const runtime = "nodejs";
@@ -106,7 +106,7 @@ export async function POST(req: Request) {
   const r = await loginAndGetKey(email, password, ip);
   if (!r.ok) return page(p, r.error);
 
-  const code = seal<AuthCode>({ t: "code", key: r.key, cc: p.code_challenge, ru: p.redirect_uri, ci: p.client_id, exp: now() + CODE_TTL });
+  const code = seal<AuthCode>({ t: "code", key: r.key, cc: p.code_challenge, ru: p.redirect_uri, ci: p.client_id, exp: now() + CODE_TTL, jti: randomId() });
   const dest = new URL(p.redirect_uri);
   dest.searchParams.set("code", code);
   if (p.state) dest.searchParams.set("state", p.state);
