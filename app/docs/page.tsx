@@ -104,6 +104,38 @@ export default function Docs() {
           exactly what is accessed and stored.
         </p>
       </section>
+
+      <section className="card" style={{ padding: 28, marginTop: 12 }}>
+        <span className="label">Troubleshooting</span>
+        <ul className="muted" style={{ lineHeight: 1.8, margin: "16px 0 0", fontSize: 14.5, paddingLeft: 20 }}>
+          <li>
+            <b style={{ color: "var(--text)" }}>Tools don&apos;t appear after connecting</b> — remove and re-add the
+            connector, or fully quit and reopen the app, then reconnect.
+          </li>
+          <li>
+            <b style={{ color: "var(--text)" }}>Connection error</b> — confirm the URL is exactly{" "}
+            <code className="inline" style={{ fontSize: 13 }}>https://mcp.wearewarp.com/api/mcp</code>; if it just
+            connected, retry the request once.
+          </li>
+          <li>
+            <b style={{ color: "var(--text)" }}>Sign-in fails</b> — use your Warp account email and password. No account
+            yet? Create one at{" "}
+            <a className="link" href="https://www.wearewarp.com/agents/account">wearewarp.com/agents/account</a>.
+          </li>
+          <li>
+            <b style={{ color: "var(--text)" }}>&ldquo;LTL quotes require dimensions&rdquo;</b> — include pallet
+            length × width × height (e.g. 48 × 40 × 48 in); LTL needs dimensions for a firm rate.
+          </li>
+          <li>
+            <b style={{ color: "var(--text)" }}>Booking says no card on file</b> — add a payment method at
+            wearewarp.com/agents/account; booking charges that card.
+          </li>
+          <li>
+            <b style={{ color: "var(--text)" }}>Still stuck</b> —{" "}
+            <a className="link" href="mailto:support@wearewarp.com">support@wearewarp.com</a>.
+          </li>
+        </ul>
+      </section>
     </Shell>
   );
 }
