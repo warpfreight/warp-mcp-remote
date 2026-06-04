@@ -38,9 +38,9 @@ function page(p: P, errorMsg?: string): Response {
   const hidden = FIELDS.map((f) => `<input type="hidden" name="${f}" value="${esc(p[f])}">`).join("");
   const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Sign in to Warp</title></head>
-<body style="margin:0;background:#141c2b;color:#e2e8f0;font-family:system-ui,-apple-system,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center">
-  <div style="width:360px;max-width:90vw;background:#1c2536;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:28px">
-    <svg width="116" height="33" viewBox="0 0 660 186" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Warp" style="display:block;margin:0 0 18px">
+<body style="margin:0;background:#141c2b;color:#e2e8f0;font-family:system-ui,-apple-system,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;box-sizing:border-box">
+  <div style="width:100%;max-width:380px;background:#1c2536;border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:32px;box-shadow:0 10px 36px rgba(0,0,0,.3)">
+    <svg width="116" height="33" viewBox="0 0 660 186" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Warp" style="display:block;margin:0 auto 22px">
       <path d="M660 185.035H0V0H660V185.035ZM14.0597 171.327H646.141V13.9593H14.0597V171.327Z" fill="#00FF33"/>
       <path d="M300.976 53.2756L332.509 131.608H351.239L319.705 53.2756H300.976Z" fill="#00FF33"/>
       <path d="M215.919 131.608H234.648L266.182 53.2756H247.453L215.919 131.608Z" fill="#00FF33"/>
@@ -50,8 +50,8 @@ function page(p: P, errorMsg?: string): Response {
       <path d="M292.04 76.1794H275.219V94.1557H292.04V76.1794Z" fill="#00FF33"/>
       <path d="M275.219 131.615H292.04V113.84H275.219V131.615Z" fill="#00FF33"/>
     </svg>
-    <h1 style="font-size:22px;font-weight:700;margin:0 0 4px">Sign in to connect</h1>
-    <p style="font-size:13.5px;color:#94a3b8;line-height:1.5;margin:0 0 20px">Log in with your Warp account to let this AI assistant quote, book, and track your freight. Your password is sent only to Warp — the assistant never sees it.</p>
+    <h1 style="font-size:21px;font-weight:700;letter-spacing:-.01em;margin:0 0 8px;text-align:center">Sign in to connect</h1>
+    <p style="font-size:13.5px;color:#94a3b8;line-height:1.6;margin:0 0 24px;text-align:center">Log in with your Warp account so this assistant can quote, book, and track your freight. Your password is sent only to Warp — never to the assistant.</p>
     ${errorMsg ? `<div style="background:rgba(229,72,77,.12);border:1px solid rgba(229,72,77,.4);color:#f8a8aa;border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:14px">${esc(errorMsg)}</div>` : ""}
     <form method="POST" action="/authorize">
       ${hidden}
