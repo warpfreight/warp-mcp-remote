@@ -1,4 +1,4 @@
-import { Shell, card, muted, accent, INSTALL_GUIDE, MCP_URL } from "@/components/brand";
+import { Shell, INSTALL_GUIDE, MCP_URL } from "@/components/brand";
 
 export const metadata = {
   title: "Warp MCP — Docs & tool reference",
@@ -55,60 +55,53 @@ const GROUPS: { title: string; tools: [string, string][] }[] = [
   },
 ];
 
-const codeInline: React.CSSProperties = {
-  fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace",
-  color: accent,
-  fontSize: 13,
-};
-
 export default function Docs() {
   return (
     <Shell>
-      <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: "-0.02em", margin: "0 0 12px" }}>Documentation</h1>
-      <p style={{ color: muted, lineHeight: 1.6, margin: "0 0 32px", maxWidth: 640 }}>
+      <h1 className="h1" style={{ fontSize: 42, margin: "0 0 16px" }}>Documentation</h1>
+      <p className="lead" style={{ maxWidth: 640, margin: "0 0 44px" }}>
         A Streamable-HTTP MCP server for the Warp freight platform. Connect it once and your AI assistant can quote,
         book, and manage real shipments on your Warp account.
       </p>
 
-      <section style={{ ...card, marginBottom: 24 }}>
-        <h2 style={{ fontSize: 13, textTransform: "uppercase", letterSpacing: "0.08em", color: "#64748b", margin: "0 0 12px" }}>Connect</h2>
-        <p style={{ color: muted, lineHeight: 1.7, margin: "0 0 10px" }}>
-          Add a custom connector pointing at <code style={codeInline}>{MCP_URL}</code>, click Connect, and sign in with
+      <section className="card" style={{ padding: 28, marginBottom: 40 }}>
+        <span className="label">Connect</span>
+        <p className="muted" style={{ lineHeight: 1.75, margin: "16px 0 10px", fontSize: 15 }}>
+          Add a custom connector pointing at <code className="inline">{MCP_URL}</code>, click Connect, and sign in with
           your Warp account (OAuth 2.1 + PKCE). The assistant receives an opaque, encrypted token — never your password
           or raw key.
         </p>
-        <p style={{ color: muted, lineHeight: 1.7, margin: 0 }}>
+        <p className="muted" style={{ margin: 0, fontSize: 15 }}>
           Step-by-step for Claude Desktop, Claude Code, and ChatGPT:{" "}
-          <a href={INSTALL_GUIDE} style={{ color: accent, textDecoration: "none" }}>install guide ↗</a>
+          <a className="link" href={INSTALL_GUIDE}>install guide ↗</a>
         </p>
       </section>
 
-      <h2 style={{ fontSize: 13, textTransform: "uppercase", letterSpacing: "0.08em", color: "#64748b", margin: "0 0 16px" }}>
-        Tools
-      </h2>
-      {GROUPS.map((g) => (
-        <div key={g.title} style={{ marginBottom: 22 }}>
-          <h3 style={{ fontSize: 15, fontWeight: 650, margin: "0 0 10px", color: "#e2e8f0" }}>{g.title}</h3>
-          <div style={{ display: "grid", gap: 8 }}>
-            {g.tools.map(([name, desc]) => (
-              <div key={name} style={{ ...card, padding: "12px 14px", display: "grid", gridTemplateColumns: "minmax(190px, 230px) 1fr", gap: 12, alignItems: "baseline" }}>
-                <code style={{ ...codeInline, fontSize: 13.5 }}>{name}</code>
-                <span style={{ color: muted, fontSize: 13.5, lineHeight: 1.5 }}>{desc}</span>
-              </div>
-            ))}
+      <span className="label">Tools</span>
+      <div style={{ marginTop: 18 }}>
+        {GROUPS.map((g) => (
+          <div key={g.title} style={{ marginBottom: 28 }}>
+            <h3 style={{ fontSize: 13, fontWeight: 700, margin: "0 0 12px", color: "var(--muted)", textTransform: "uppercase", letterSpacing: ".07em" }}>
+              {g.title}
+            </h3>
+            <div className="card">
+              {g.tools.map(([name, desc]) => (
+                <div key={name} className="toolrow">
+                  <code className="inline" style={{ fontSize: 13.5 }}>{name}</code>
+                  <span className="muted" style={{ fontSize: 14, lineHeight: 1.5 }}>{desc}</span>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
 
-      <section style={{ ...card, marginTop: 12 }}>
-        <h2 style={{ fontSize: 13, textTransform: "uppercase", letterSpacing: "0.08em", color: "#64748b", margin: "0 0 12px" }}>
-          Authentication & data
-        </h2>
-        <p style={{ color: muted, lineHeight: 1.7, margin: 0 }}>
-          Authentication is handled entirely by the Connect flow — no separate login tool. Tool results are returned only
-          to the AI client you authorized. See the{" "}
-          <a href="/privacy" style={{ color: accent, textDecoration: "none" }}>privacy policy</a> for exactly what is
-          accessed and stored.
+      <section className="card" style={{ padding: 28, marginTop: 12 }}>
+        <span className="label">Authentication &amp; data</span>
+        <p className="muted" style={{ lineHeight: 1.75, margin: "16px 0 0", fontSize: 15 }}>
+          Authentication is handled entirely by the Connect flow — there is no separate login tool. Tool results are
+          returned only to the AI client you authorized. See the <a className="link" href="/privacy">privacy policy</a> for
+          exactly what is accessed and stored.
         </p>
       </section>
     </Shell>

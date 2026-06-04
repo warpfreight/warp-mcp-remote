@@ -1,4 +1,4 @@
-import { Shell, card, muted, accent } from "@/components/brand";
+import { Shell } from "@/components/brand";
 
 export const metadata = {
   title: "Warp MCP — Privacy Policy",
@@ -7,22 +7,24 @@ export const metadata = {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section style={{ marginBottom: 26 }}>
-      <h2 style={{ fontSize: 16, fontWeight: 650, margin: "0 0 8px", color: "#e2e8f0" }}>{title}</h2>
-      <div style={{ color: muted, lineHeight: 1.7, fontSize: 14.5 }}>{children}</div>
+    <section style={{ marginBottom: 28 }}>
+      <h2 style={{ fontSize: 16.5, fontWeight: 700, letterSpacing: "-0.01em", margin: "0 0 8px" }}>{title}</h2>
+      <div className="muted" style={{ lineHeight: 1.75, fontSize: 14.5 }}>{children}</div>
     </section>
   );
 }
 
+const strong = { color: "var(--text)", fontWeight: 600 } as const;
+
 export default function Privacy() {
   return (
     <Shell>
-      <h1 style={{ fontSize: 28, fontWeight: 700, letterSpacing: "-0.02em", margin: "0 0 6px" }}>Privacy Policy</h1>
-      <p style={{ color: "#64748b", fontSize: 13, margin: "0 0 28px" }}>
-        Warp MCP connector (<code style={{ color: accent }}>mcp.wearewarp.com</code>) · Last updated June 2026
+      <h1 className="h1" style={{ fontSize: 42, margin: "0 0 8px" }}>Privacy Policy</h1>
+      <p style={{ color: "var(--faint)", fontSize: 13, margin: "0 0 34px" }}>
+        Warp MCP connector (<code className="inline">mcp.wearewarp.com</code>) · Last updated June 2026
       </p>
 
-      <div style={{ ...card, padding: "8px 24px 24px" }}>
+      <div className="card" style={{ padding: "10px 28px 28px" }}>
         <Section title="Overview">
           This connector lets an AI assistant you choose (e.g. Claude or ChatGPT) act on your behalf against your Warp
           freight account through the Model Context Protocol. It is operated by Warp (wearewarp.com). It is a thin,
@@ -38,8 +40,7 @@ export default function Privacy() {
 
         <Section title="Credentials">
           When you sign in, your email and password are transmitted directly to Warp&apos;s authentication service to mint
-          a scoped access key. <strong style={{ color: "#e2e8f0" }}>We never store your password, and the AI assistant
-          never receives it.</strong>
+          a scoped access key. <span style={strong}>We never store your password, and the AI assistant never receives it.</span>
         </Section>
 
         <Section title="What we store">
@@ -52,8 +53,8 @@ export default function Privacy() {
 
         <Section title="How your information is used">
           Tool results are returned only to the AI client you connected, to fulfill the requests you make. We do{" "}
-          <strong style={{ color: "#e2e8f0" }}>not</strong> sell, rent, or share your information with third parties, and
-          we do not use it for advertising or to train models.
+          <span style={strong}>not</span> sell, rent, or share your information with third parties, and we do not use it
+          for advertising or to train models.
         </Section>
 
         <Section title="Payments">
@@ -72,8 +73,9 @@ export default function Privacy() {
         </Section>
 
         <Section title="Contact">
-          Questions about this policy or your data: <a href="mailto:support@wearewarp.com" style={{ color: accent }}>support@wearewarp.com</a> ·{" "}
-          <a href="https://www.wearewarp.com" style={{ color: accent }}>wearewarp.com</a>.
+          Questions about this policy or your data:{" "}
+          <a className="link" href="mailto:support@wearewarp.com">support@wearewarp.com</a> ·{" "}
+          <a className="link" href="https://www.wearewarp.com">wearewarp.com</a>.
         </Section>
 
         <Section title="Changes">
