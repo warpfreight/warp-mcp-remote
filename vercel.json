@@ -1,5 +1,6 @@
 {
   "crons": [
-    { "path": "/api/mcp?warm=1", "schedule": "*/5 * * * *" }
+    { "path": "/api/mcp?warm=1", "schedule": "*/5 * * * *" },
+    { "path": "/api/chatgpt/mcp?warm=1", "schedule": "*/5 * * * *" }
   ]
 }
