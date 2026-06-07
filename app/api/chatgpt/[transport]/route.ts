@@ -14,7 +14,7 @@ import { AsyncLocalStorage } from "node:async_hooks";
 import { z } from "zod";
 import { unseal, originOf, now, type AccessToken } from "@/lib/oauth";
 import { isRevoked } from "@/lib/kv";
-import { sealCheckout } from "@/lib/checkout";
+import { sealCheckout, type CheckoutAddr } from "@/lib/checkout";
 import { CHECKOUT_CARD_RESOURCE_URI, checkoutCardTemplate } from "@/lib/widgets/checkout-card";
 // Live published tools + client (pinned to warp-agent-mcp@0.13.2). Deep imports —
 // the package ships dist/*.js with no exports map / type declarations.
@@ -77,7 +77,7 @@ const handler = createMcpHandler(
     //    page, where the user confirms + pays on Warp (external checkout).
     s.tool(
       "warp_book",
-      "Book a quoted Warp shipment. CALL THIS whenever the user asks to book, confirm, place, or proceed with a shipment from a quote — this tool IS the booking action. It returns a secure Warp checkout link; present that link to the user so they can confirm addresses and pay on Warp's own site (payment is completed there, not in ChatGPT). You do NOT need any additional login, payment details, or address entry to call this — only the quote_id. Never tell the user that booking is unavailable or that you lack a connection; always call this tool and give them the link.",
+      "Book a quoted Warp shipment. CALL THIS whenever the user asks to book, confirm, place, or proceed with a shipment from a quote — this tool IS the booking action. It returns a secure Warp checkout link; present that link to the user so they can confirm addresses and pay on Warp's own site (payment is completed there, not in ChatGPT). You do NOT need any additional login, payment details, or address entry to call this — only the quote_id. If the user has given pickup and/or delivery contact and address details, also pass them as pickup and delivery so the checkout form arrives pre-filled. Never tell the user that booking is unavailable or that you lack a connection; always call this tool and give them the link.",
       {
         quote_id: z.string().describe("Quote ID from warp_quote_id (Warp) or the id of any market option returned by a quote tool"),
         amount_usd: z.number().optional().describe("The all-in price shown on the quote (for display on the checkout card; the charge is verified server-side)"),
@@ -85,6 +85,14 @@ const handler = createMcpHandler(
         destination_zip: z.string().optional().describe("Destination ZIP from the quote, for display"),
         mode: z.string().optional().describe("Mode label from the quote (LTL, FTL, Cargo van, 26' box truck), for display"),
         pickup_date: z.string().optional().describe("Pickup date from the quote, for display"),
+        pickup: z.object({
+          contactName: z.string().optional(), street: z.string().optional(), city: z.string().optional(),
+          state: z.string().optional(), zipCode: z.string().optional(), phone: z.string().optional(), email: z.string().optional(),
+        }).optional().describe("Pickup contact + address if the user provided it (contactName, street, city, state, zipCode, phone, email) — pre-fills the checkout form"),
+        delivery: z.object({
+          contactName: z.string().optional(), street: z.string().optional(), city: z.string().optional(),
+          state: z.string().optional(), zipCode: z.string().optional(), phone: z.string().optional(), email: z.string().optional(),
+        }).optional().describe("Delivery contact + address if the user provided it — pre-fills the checkout form"),
       },
       async (params: {
         quote_id: string;
@@ -93,6 +101,8 @@ const handler = createMcpHandler(
         destination_zip?: string;
         mode?: string;
         pickup_date?: string;
+        pickup?: CheckoutAddr;
+        delivery?: CheckoutAddr;
       }) => {
         const key = getApiKey();
         if (!key) {
@@ -106,6 +116,8 @@ const handler = createMcpHandler(
           origin_zip: params.origin_zip,
           destination_zip: params.destination_zip,
           pickup_date: params.pickup_date,
+          pickup: params.pickup,
+          delivery: params.delivery,
         });
         const checkoutUrl = `${CHECKOUT_BASE_URL}/checkout?session=${encodeURIComponent(token)}`;
         const lane = params.origin_zip && params.destination_zip

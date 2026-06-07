@@ -43,6 +43,8 @@ export default function CheckoutPage({
       <CheckoutForm
         token={token}
         redirectUrl={redirectUrl}
+        initialPickup={session.pickup}
+        initialDelivery={session.delivery}
         quote={{
           quote_id: session.quote_id,
           amount_usd: session.amount_usd,

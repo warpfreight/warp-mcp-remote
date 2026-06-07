@@ -16,8 +16,15 @@ type Addr = {
   zipCode: string; phone: string; email: string; specialInstruction: string;
 };
 
-const emptyAddr = (zip = ""): Addr => ({
-  contactName: "", street: "", city: "", state: "", zipCode: zip, phone: "", email: "", specialInstruction: "",
+const fillAddr = (zip = "", init?: Partial<Addr>): Addr => ({
+  contactName: init?.contactName ?? "",
+  street: init?.street ?? "",
+  city: init?.city ?? "",
+  state: init?.state ?? "",
+  zipCode: init?.zipCode ?? zip,
+  phone: init?.phone ?? "",
+  email: init?.email ?? "",
+  specialInstruction: init?.specialInstruction ?? "",
 });
 
 const C = {
@@ -41,12 +48,13 @@ function money(n?: number): string | null {
 }
 
 export default function CheckoutForm({
-  token, redirectUrl, quote,
+  token, redirectUrl, quote, initialPickup, initialDelivery,
 }: {
   token: string; redirectUrl: string; quote: Quote;
+  initialPickup?: Partial<Addr>; initialDelivery?: Partial<Addr>;
 }) {
-  const [pickup, setPickup] = useState<Addr>(emptyAddr(quote.origin_zip));
-  const [delivery, setDelivery] = useState<Addr>(emptyAddr(quote.destination_zip));
+  const [pickup, setPickup] = useState<Addr>(fillAddr(quote.origin_zip ?? "", initialPickup));
+  const [delivery, setDelivery] = useState<Addr>(fillAddr(quote.destination_zip ?? "", initialDelivery));
   const [notes, setNotes] = useState("");
   const [reference, setReference] = useState("");
   const [status, setStatus] = useState<"idle" | "submitting" | "booked" | "needs_card" | "error">("idle");

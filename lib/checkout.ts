@@ -11,6 +11,16 @@
 import { seal, unseal, now, randomId } from "@/lib/oauth";
 import { claimCheckout } from "@/lib/kv";
 
+export type CheckoutAddr = {
+  contactName?: string;
+  street?: string;
+  city?: string;
+  state?: string;
+  zipCode?: string;
+  phone?: string;
+  email?: string;
+};
+
 export type CheckoutSession = {
   t: "co";
   key: string; // the user's wak_live_ proxy key — sealed, never exposed in plaintext
@@ -20,6 +30,8 @@ export type CheckoutSession = {
   origin_zip?: string;
   destination_zip?: string;
   pickup_date?: string;
+  pickup?: CheckoutAddr; // pre-fills the checkout form when the model captured it
+  delivery?: CheckoutAddr;
   exp: number;
   jti: string;
 };
