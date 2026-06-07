@@ -33,6 +33,23 @@ export async function claimAuthCode(jti: string, ttlSeconds: number): Promise<bo
   }
 }
 
+/**
+ * Atomically claim a one-time checkout session by its jti (separate namespace
+ * from auth codes). Returns true the first time (proceed to book) and false on
+ * replay (already booked). Fails OPEN (true) if KV is unavailable — matches the
+ * auth-code policy: a KV outage degrades the single-use guarantee, never blocks
+ * a legitimate booking. The short session TTL + one-click UI bound the exposure.
+ */
+export async function claimCheckout(jti: string, ttlSeconds: number): Promise<boolean> {
+  if (!redis || !jti) return true;
+  try {
+    const res = await redis.set(`checkout:${jti}`, "1", { nx: true, ex: Math.max(1, ttlSeconds) });
+    return res === "OK";
+  } catch {
+    return true;
+  }
+}
+
 /** Revoke a token by jti for the remainder of its lifetime. Best-effort. */
 export async function revokeToken(jti: string, ttlSeconds: number): Promise<void> {
   if (!redis || !jti || ttlSeconds <= 0) return;
