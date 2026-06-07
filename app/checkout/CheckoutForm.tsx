@@ -27,6 +27,11 @@ const fillAddr = (zip = "", init?: Partial<Addr>): Addr => ({
   specialInstruction: init?.specialInstruction ?? "",
 });
 
+// /api/v1/book requires all of these on each stop (unless a default shipper /
+// prior lane covers it). Complete → we can show a confirm-only view.
+const isComplete = (a: Addr) =>
+  !!(a.contactName && a.street && a.city && a.state && a.zipCode && a.phone && a.email);
+
 const C = {
   green: "#00FA8A", bg2: "#161616", bg3: "#1f1f1f", text: "#e6e6e6", text2: "#a0a0a0",
   border: "rgba(255,255,255,0.12)",
@@ -53,10 +58,16 @@ export default function CheckoutForm({
   token: string; redirectUrl: string; quote: Quote;
   initialPickup?: Partial<Addr>; initialDelivery?: Partial<Addr>;
 }) {
-  const [pickup, setPickup] = useState<Addr>(fillAddr(quote.origin_zip ?? "", initialPickup));
-  const [delivery, setDelivery] = useState<Addr>(fillAddr(quote.destination_zip ?? "", initialDelivery));
+  const initPickup = fillAddr(quote.origin_zip ?? "", initialPickup);
+  const initDelivery = fillAddr(quote.destination_zip ?? "", initialDelivery);
+
+  const [pickup, setPickup] = useState<Addr>(initPickup);
+  const [delivery, setDelivery] = useState<Addr>(initDelivery);
   const [notes, setNotes] = useState("");
   const [reference, setReference] = useState("");
+  // Confirm-only by default when both stops are complete (the common case: the
+  // assistant passed the contacts from chat). Drop into edit mode otherwise.
+  const [editing, setEditing] = useState(!(isComplete(initPickup) && isComplete(initDelivery)));
   const [status, setStatus] = useState<"idle" | "submitting" | "booked" | "needs_card" | "error">("idle");
   const [message, setMessage] = useState("");
   const [result, setResult] = useState<Record<string, unknown> | null>(null);
@@ -67,6 +78,14 @@ export default function CheckoutForm({
   const price = money(quote.amount_usd);
 
   async function submit() {
+    // If anything required is still missing, force the form open instead of
+    // submitting an incomplete booking.
+    if (!isComplete(pickup) || !isComplete(delivery)) {
+      setEditing(true);
+      setStatus("error");
+      setMessage("A few contact details are needed before booking — please complete the highlighted fields.");
+      return;
+    }
     setStatus("submitting");
     setMessage("");
     try {
@@ -114,7 +133,7 @@ export default function CheckoutForm({
     );
   }
 
-  // ── No card on file ─────────────────────────────────────────────────────────
+  // ── No card on file (same as Claude: send them to add one) ──────────────────
   if (status === "needs_card") {
     return (
       <div style={{ ...card, textAlign: "center" }}>
@@ -130,7 +149,7 @@ export default function CheckoutForm({
     );
   }
 
-  // ── Confirm form ────────────────────────────────────────────────────────────
+  // ── Confirm (or edit) ───────────────────────────────────────────────────────
   const submitting = status === "submitting";
   return (
     <div style={card}>
@@ -149,13 +168,27 @@ export default function CheckoutForm({
         )}
       </div>
 
-      <AddressFields title="Pickup" value={pickup} onChange={setPickup} />
-      <AddressFields title="Delivery" value={delivery} onChange={setDelivery} />
-
-      <label style={label}>Reference # (optional)</label>
-      <input style={input} value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Your PO or internal reference" />
-      <label style={label}>Notes (optional)</label>
-      <input style={input} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Special instructions for the carrier" />
+      {editing ? (
+        <>
+          <AddressFields title="Pickup" value={pickup} onChange={setPickup} />
+          <AddressFields title="Delivery" value={delivery} onChange={setDelivery} />
+          <label style={label}>Reference # (optional)</label>
+          <input style={input} value={reference} onChange={(e) => setReference(e.target.value)} placeholder="Your PO or internal reference" />
+          <label style={label}>Notes (optional)</label>
+          <input style={input} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Special instructions for the carrier" />
+        </>
+      ) : (
+        <>
+          <AddressSummary title="Pickup" a={pickup} />
+          <AddressSummary title="Delivery" a={delivery} />
+          <button
+            onClick={() => setEditing(true)}
+            style={{ background: "transparent", border: "none", color: C.text2, fontSize: 12.5, cursor: "pointer", padding: "2px 0 14px", textDecoration: "underline" }}
+          >
+            Edit details
+          </button>
+        </>
+      )}
 
       {status === "error" && (
         <div style={{ fontSize: 13, color: "#f8a8aa", background: "rgba(229,72,77,.1)", border: "1px solid rgba(229,72,77,.35)", borderRadius: 8, padding: "9px 11px", margin: "4px 0 12px" }}>
@@ -177,6 +210,19 @@ export default function CheckoutForm({
       <p style={{ fontSize: 11.5, color: C.text2, textAlign: "center", marginTop: 10, lineHeight: 1.5 }}>
         Charged to the card on your Warp account. You&apos;ll return to ChatGPT once it&apos;s booked.
       </p>
+    </div>
+  );
+}
+
+function AddressSummary({ title, a }: { title: string; a: Addr }) {
+  const line2 = [a.street, a.city, [a.state, a.zipCode].filter(Boolean).join(" ")].filter(Boolean).join(", ");
+  const line3 = [a.phone, a.email].filter(Boolean).join(" · ");
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <div style={{ fontSize: 12, fontWeight: 700, color: C.green, marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.04em" }}>{title}</div>
+      {a.contactName && <div style={{ fontSize: 14, color: C.text, fontWeight: 600 }}>{a.contactName}</div>}
+      {line2 && <div style={{ fontSize: 13.5, color: C.text, lineHeight: 1.5 }}>{line2}</div>}
+      {line3 && <div style={{ fontSize: 12.5, color: C.text2, marginTop: 2 }}>{line3}</div>}
     </div>
   );
 }
