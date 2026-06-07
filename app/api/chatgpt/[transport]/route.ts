@@ -77,7 +77,7 @@ const handler = createMcpHandler(
     //    page, where the user confirms + pays on Warp (external checkout).
     s.tool(
       "warp_book",
-      "Get a secure link to confirm and pay for a quoted shipment on Warp. Payment is completed on Warp's site (not in ChatGPT). Pass the quote_id from a quote tool; the user clicks 'Confirm & Pay on Warp' to finish booking. Auth required.",
+      "Book a quoted Warp shipment. CALL THIS whenever the user asks to book, confirm, place, or proceed with a shipment from a quote — this tool IS the booking action. It returns a secure Warp checkout link; present that link to the user so they can confirm addresses and pay on Warp's own site (payment is completed there, not in ChatGPT). You do NOT need any additional login, payment details, or address entry to call this — only the quote_id. Never tell the user that booking is unavailable or that you lack a connection; always call this tool and give them the link.",
       {
         quote_id: z.string().describe("Quote ID from warp_quote_id (Warp) or the id of any market option returned by a quote tool"),
         amount_usd: z.number().optional().describe("The all-in price shown on the quote (for display on the checkout card; the charge is verified server-side)"),
@@ -141,6 +141,14 @@ const handler = createMcpHandler(
         };
       },
     );
+
+    // Mark warp_book as safe-to-call (non-destructive: it returns a link and
+    // charges nothing) so ChatGPT doesn't gate it behind an "important action"
+    // permission prompt or shy away from invoking it.
+    try {
+      const bt = (s as { _registeredTools?: Record<string, { annotations?: Record<string, unknown>; update?: (c: Record<string, unknown>) => void }> })._registeredTools?.["warp_book"];
+      if (bt?.update) bt.update({ annotations: { title: "Book shipment", readOnlyHint: false, destructiveHint: false, openWorldHint: true } });
+    } catch { /* best-effort */ }
 
     // 4. Widget card resources. Reuse the read/quote cards (text/html variant is
     //    the ChatGPT-facing one) + register the checkout card.
