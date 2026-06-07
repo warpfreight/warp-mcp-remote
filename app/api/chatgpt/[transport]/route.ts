@@ -128,9 +128,8 @@ const handler = createMcpHandler(
             {
               type: "text",
               text:
-                `Your shipment (${lane}) is ready to book. Complete it securely on Warp — ` +
-                `payment can't be taken inside ChatGPT, so finish here:\n${checkoutUrl}\n\n` +
-                `You'll be returned to this conversation once it's booked.`,
+                `Shipment ${lane} is ready to book. Present this EXACT link to the user as the booking link — do NOT replace it, shorten it, or construct any other URL (never use customer.wearewarp.com or a quote URL):\n${checkoutUrl}\n\n` +
+                `This is the only valid booking link. Payment is completed on Warp; the user returns here when done.`,
             },
           ],
           structuredContent: {
@@ -154,12 +153,23 @@ const handler = createMcpHandler(
       },
     );
 
-    // Mark warp_book as safe-to-call (non-destructive: it returns a link and
-    // charges nothing) so ChatGPT doesn't gate it behind an "important action"
-    // permission prompt or shy away from invoking it.
+    // Mark warp_book safe-to-call AND attach the ChatGPT widget template to the
+    // tool REGISTRATION. Per OpenAI's spec, `openai/outputTemplate` lives on the
+    // tool (not the call result) — that's what makes ChatGPT render the
+    // "Confirm & Pay on Warp" card straight from the tool output, so the user
+    // clicks the real button no matter how the model narrates the result.
     try {
-      const bt = (s as { _registeredTools?: Record<string, { annotations?: Record<string, unknown>; update?: (c: Record<string, unknown>) => void }> })._registeredTools?.["warp_book"];
-      if (bt?.update) bt.update({ annotations: { title: "Book shipment", readOnlyHint: false, destructiveHint: false, openWorldHint: true } });
+      const bt = (s as { _registeredTools?: Record<string, { annotations?: Record<string, unknown>; _meta?: Record<string, unknown>; update?: (c: Record<string, unknown>) => void }> })._registeredTools?.["warp_book"];
+      if (bt) {
+        const annotations = { title: "Book shipment", readOnlyHint: false, destructiveHint: false, openWorldHint: true };
+        if (typeof bt.update === "function") bt.update({ annotations });
+        else bt.annotations = annotations;
+        bt._meta = {
+          ...(bt._meta ?? {}),
+          "openai/outputTemplate": CHECKOUT_CARD_RESOURCE_URI,
+          ui: { resourceUri: CHECKOUT_CARD_RESOURCE_URI, csp: { redirect_domains: [CHECKOUT_BASE_URL] } },
+        };
+      }
     } catch { /* best-effort */ }
 
     // 4. Widget card resources. Reuse the read/quote cards (text/html variant is
@@ -177,8 +187,8 @@ const handler = createMcpHandler(
       { description: "Inline batch-quote card after warp_batch_quote.", mimeType: "text/html" },
       async () => ({ contents: [{ uri: BATCH_QUOTE_CARD_RESOURCE_URI, mimeType: "text/html", text: batchQuoteCardTemplate() }] }));
     s.registerResource("warp-checkout-card", CHECKOUT_CARD_RESOURCE_URI,
-      { description: "Inline 'Confirm & Pay on Warp' card after warp_book.", mimeType: "text/html" },
-      async () => ({ contents: [{ uri: CHECKOUT_CARD_RESOURCE_URI, mimeType: "text/html", text: checkoutCardTemplate() }] }));
+      { description: "Inline 'Confirm & Pay on Warp' card after warp_book.", mimeType: MCP_APP_MIME_TYPE },
+      async () => ({ contents: [{ uri: CHECKOUT_CARD_RESOURCE_URI, mimeType: MCP_APP_MIME_TYPE, text: checkoutCardTemplate(), _meta: { ui: { prefersBorder: true } } }] }));
   },
   {
     serverInfo: {
