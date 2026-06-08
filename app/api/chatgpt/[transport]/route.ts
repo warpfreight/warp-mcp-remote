@@ -211,7 +211,7 @@ const handler = createMcpHandler(
     // it away from its baked-in knowledge of warp.com's public pages, which it
     // otherwise offers as a (broken) "booking" link.
     instructions:
-      "Warp Freight — booking rules: To BOOK or pay for a shipment you MUST call the warp_book tool; it returns the ONLY valid booking link (an https://mcp.wearewarp.com/b/... URL). NEVER send the user to customer.wearewarp.com, www.wearewarp.com, /public/freight-quote, or any URL you construct or recall yourself — those are not booking links and will not work. When you present a quote, do NOT include any booking URL; just offer to book it, and call warp_book once the user confirms (pass their pickup and delivery contacts). Quotes and tracking are read-only; booking is the only action and it happens through warp_book.",
+      "Warp Freight rules for the assistant. (1) When the user only asks for a quote, price, rate, or carrier comparison, do NOT call warp_book and do NOT show, generate, or mention ANY booking link — a quote reply must contain ZERO booking links; simply say you can book it whenever they're ready. (2) Call warp_book ONLY after the user explicitly asks to book, confirm, or place the shipment; it returns the only valid booking link (an https://mcp.wearewarp.com/b/... URL) — present that link exactly as returned, and pass the user's pickup and delivery contacts. (3) NEVER send the user to customer.wearewarp.com, www.wearewarp.com, /public/freight-quote, or any URL you construct or recall yourself; those are not booking links. Quotes and tracking are read-only; booking is the only action, only via warp_book, only after the user asks.",
   },
   { basePath: "/api/chatgpt", maxDuration: 60 },
 );
