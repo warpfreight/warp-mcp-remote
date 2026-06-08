@@ -36,6 +36,21 @@ const WARP_API_URL = process.env.WARP_API_URL ?? "https://www.wearewarp.com/api/
 // Public origin of this deployment (where /checkout lives). Overridable for dev.
 const CHECKOUT_BASE_URL = process.env.CHECKOUT_BASE_URL ?? "https://mcp.wearewarp.com";
 
+// Backward-compat shim: connectors linked before the widget was removed still
+// have a cached `openai/outputTemplate` pointing at this URI, so ChatGPT fetches
+// it on every warp_book call. Serve a minimal STATIC card (no script — the old
+// interactive one was blocked by the sandbox anyway) so those connections don't
+// hit a resource-not-found error. New connections carry no outputTemplate and
+// never request it. The real action is the booking link in the tool's text.
+const CHECKOUT_CARD_RESOURCE_URI = "ui://warp/checkout-card";
+const checkoutCardStub = () =>
+  `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>` +
+  `<body style="margin:0;font-family:-apple-system,system-ui,sans-serif">` +
+  `<div style="border:1px solid rgba(127,127,127,.22);border-radius:14px;padding:16px;max-width:460px">` +
+  `<div style="font-size:14px;font-weight:650">Your Warp booking is ready</div>` +
+  `<div style="font-size:12.5px;opacity:.62;margin-top:5px;line-height:1.5">Open the booking link in the message to confirm the details and pay securely on Warp.</div>` +
+  `</div></body></html>`;
+
 // Per-request Warp API key, scoped via AsyncLocalStorage (multi-tenant).
 const keyStore = new AsyncLocalStorage<string | undefined>();
 const getApiKey = (): string | undefined => keyStore.getStore();
@@ -182,6 +197,11 @@ const handler = createMcpHandler(
     s.registerResource("warp-batch-quote-card", BATCH_QUOTE_CARD_RESOURCE_URI,
       { description: "Inline batch-quote card after warp_batch_quote.", mimeType: "text/html" },
       async () => ({ contents: [{ uri: BATCH_QUOTE_CARD_RESOURCE_URI, mimeType: "text/html", text: batchQuoteCardTemplate() }] }));
+    // Legacy fallback resource (see shim note above) — keeps pre-removal
+    // connections from erroring on the cached outputTemplate fetch.
+    s.registerResource("warp-checkout-card", CHECKOUT_CARD_RESOURCE_URI,
+      { description: "Static fallback card for legacy connections.", mimeType: MCP_APP_MIME_TYPE },
+      async () => ({ contents: [{ uri: CHECKOUT_CARD_RESOURCE_URI, mimeType: MCP_APP_MIME_TYPE, text: checkoutCardStub() }] }));
   },
   {
     serverInfo: {
