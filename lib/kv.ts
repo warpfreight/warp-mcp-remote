@@ -50,6 +50,32 @@ export async function claimCheckout(jti: string, ttlSeconds: number): Promise<bo
   }
 }
 
+/**
+ * Store a sealed checkout token under a short code so the booking link can be a
+ * tidy `/b/<code>` URL instead of a 300-char `?session=` token. Models relay a
+ * short clean URL verbatim; they tend to "helpfully" replace a long opaque one.
+ * Returns false if KV is unavailable (caller falls back to the long URL).
+ */
+export async function storeShortCheckout(code: string, token: string, ttlSeconds: number): Promise<boolean> {
+  if (!redis || !code) return false;
+  try {
+    await redis.set(`b:${code}`, token, { ex: Math.max(1, ttlSeconds) });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Resolve a short checkout code back to its sealed token (or null). */
+export async function getShortCheckout(code: string): Promise<string | null> {
+  if (!redis || !code) return null;
+  try {
+    return (await redis.get(`b:${code}`)) as string | null;
+  } catch {
+    return null;
+  }
+}
+
 /** Revoke a token by jti for the remainder of its lifetime. Best-effort. */
 export async function revokeToken(jti: string, ttlSeconds: number): Promise<void> {
   if (!redis || !jti || ttlSeconds <= 0) return;

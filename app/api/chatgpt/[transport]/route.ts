@@ -13,7 +13,8 @@ import { createMcpHandler } from "mcp-handler";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { z } from "zod";
 import { unseal, originOf, now, type AccessToken } from "@/lib/oauth";
-import { isRevoked } from "@/lib/kv";
+import { isRevoked, storeShortCheckout } from "@/lib/kv";
+import crypto from "node:crypto";
 import { sealCheckout, type CheckoutAddr } from "@/lib/checkout";
 import { CHECKOUT_CARD_RESOURCE_URI, checkoutCardTemplate } from "@/lib/widgets/checkout-card";
 // Live published tools + client (pinned to warp-agent-mcp@0.13.2). Deep imports —
@@ -119,7 +120,17 @@ const handler = createMcpHandler(
           pickup: params.pickup,
           delivery: params.delivery,
         });
-        const checkoutUrl = `${CHECKOUT_BASE_URL}/checkout?session=${encodeURIComponent(token)}`;
+        // Short, clean booking URL: store the sealed session in KV under a short
+        // code so the model relays a tidy /b/<code> link verbatim instead of
+        // swapping a 300-char opaque token for a URL it guesses. Falls back to
+        // the long ?session= URL if KV is unavailable.
+        let checkoutUrl = `${CHECKOUT_BASE_URL}/checkout?session=${encodeURIComponent(token)}`;
+        try {
+          const code = crypto.randomBytes(6).toString("base64url");
+          if (await storeShortCheckout(code, token, 60 * 30)) {
+            checkoutUrl = `${CHECKOUT_BASE_URL}/b/${code}`;
+          }
+        } catch { /* keep the long URL */ }
         const lane = params.origin_zip && params.destination_zip
           ? `${params.origin_zip} → ${params.destination_zip}`
           : "your shipment";
