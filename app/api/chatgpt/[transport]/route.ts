@@ -157,15 +157,10 @@ const handler = createMcpHandler(
                 `This is the only valid booking link. Payment is completed on Warp; the user returns here when done.`,
             },
           ],
-          structuredContent: {
-            checkout_url: checkoutUrl,
-            quote_id: params.quote_id,
-            amount_usd: params.amount_usd,
-            origin_zip: params.origin_zip,
-            destination_zip: params.destination_zip,
-            mode: params.mode,
-            pickup_date: params.pickup_date,
-          },
+          // No structuredContent: with the widget removed there's no component
+          // (or outputSchema) to consume it, and ChatGPT rejects orphaned
+          // structuredContent as an "internal resource error". The booking link
+          // lives in the text content above, which is all the model needs.
         };
       },
     );
