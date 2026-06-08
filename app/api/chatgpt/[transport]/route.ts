@@ -3,8 +3,8 @@
 // Same Warp tools as /api/[transport], but OpenAI's Apps SDK forbids charging for
 // a service inside ChatGPT. So this endpoint removes the two charging tools
 // (warp_book / warp_batch_book) and replaces booking with a compliant link-out:
-// `warp_book` mints a sealed checkout session and returns a "Confirm & Pay on
-// Warp" card whose button opens our own /checkout page (external checkout) —
+// `warp_book` mints a sealed checkout session and returns a short link to our
+// own /checkout page where the user confirms + pays (external checkout) —
 // payment happens off-ChatGPT. Everything else (quotes, tracking, reads) is the
 // live published toolset, unchanged.
 //
@@ -16,7 +16,6 @@ import { unseal, originOf, now, type AccessToken } from "@/lib/oauth";
 import { isRevoked, storeShortCheckout } from "@/lib/kv";
 import crypto from "node:crypto";
 import { sealCheckout, type CheckoutAddr } from "@/lib/checkout";
-import { CHECKOUT_CARD_RESOURCE_URI, checkoutCardTemplate } from "@/lib/widgets/checkout-card";
 // Live published tools + client (pinned to warp-agent-mcp@0.13.2). Deep imports —
 // the package ships dist/*.js with no exports map / type declarations.
 // @ts-ignore
@@ -152,34 +151,20 @@ const handler = createMcpHandler(
             mode: params.mode,
             pickup_date: params.pickup_date,
           },
-          _meta: {
-            "openai/outputTemplate": CHECKOUT_CARD_RESOURCE_URI,
-            ui: {
-              resourceUri: CHECKOUT_CARD_RESOURCE_URI,
-              // Allow the card's button to leave ChatGPT for our checkout origin.
-              csp: { redirect_domains: [CHECKOUT_BASE_URL] },
-            },
-          },
         };
       },
     );
 
-    // Mark warp_book safe-to-call AND attach the ChatGPT widget template to the
-    // tool REGISTRATION. Per OpenAI's spec, `openai/outputTemplate` lives on the
-    // tool (not the call result) — that's what makes ChatGPT render the
-    // "Confirm & Pay on Warp" card straight from the tool output, so the user
-    // clicks the real button no matter how the model narrates the result.
+    // Mark warp_book safe-to-call (non-destructive: it returns a link, charges
+    // nothing) so ChatGPT doesn't gate it behind an "important action" prompt.
+    // No widget/outputTemplate: ChatGPT's sandbox blocks our inline-script card,
+    // so the booking link is delivered as plain text (which the model relays).
     try {
-      const bt = (s as { _registeredTools?: Record<string, { annotations?: Record<string, unknown>; _meta?: Record<string, unknown>; update?: (c: Record<string, unknown>) => void }> })._registeredTools?.["warp_book"];
+      const bt = (s as { _registeredTools?: Record<string, { annotations?: Record<string, unknown>; update?: (c: Record<string, unknown>) => void }> })._registeredTools?.["warp_book"];
       if (bt) {
         const annotations = { title: "Book shipment", readOnlyHint: false, destructiveHint: false, openWorldHint: true };
         if (typeof bt.update === "function") bt.update({ annotations });
         else bt.annotations = annotations;
-        bt._meta = {
-          ...(bt._meta ?? {}),
-          "openai/outputTemplate": CHECKOUT_CARD_RESOURCE_URI,
-          ui: { resourceUri: CHECKOUT_CARD_RESOURCE_URI, csp: { redirect_domains: [CHECKOUT_BASE_URL] } },
-        };
       }
     } catch { /* best-effort */ }
 
@@ -197,9 +182,6 @@ const handler = createMcpHandler(
     s.registerResource("warp-batch-quote-card", BATCH_QUOTE_CARD_RESOURCE_URI,
       { description: "Inline batch-quote card after warp_batch_quote.", mimeType: "text/html" },
       async () => ({ contents: [{ uri: BATCH_QUOTE_CARD_RESOURCE_URI, mimeType: "text/html", text: batchQuoteCardTemplate() }] }));
-    s.registerResource("warp-checkout-card", CHECKOUT_CARD_RESOURCE_URI,
-      { description: "Inline 'Confirm & Pay on Warp' card after warp_book.", mimeType: MCP_APP_MIME_TYPE },
-      async () => ({ contents: [{ uri: CHECKOUT_CARD_RESOURCE_URI, mimeType: MCP_APP_MIME_TYPE, text: checkoutCardTemplate(), _meta: { ui: { prefersBorder: true } } }] }));
   },
   {
     serverInfo: {
