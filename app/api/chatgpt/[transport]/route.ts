@@ -36,20 +36,22 @@ const WARP_API_URL = process.env.WARP_API_URL ?? "https://www.wearewarp.com/api/
 // Public origin of this deployment (where /checkout lives). Overridable for dev.
 const CHECKOUT_BASE_URL = process.env.CHECKOUT_BASE_URL ?? "https://mcp.wearewarp.com";
 
-// Backward-compat shim: connectors linked before the widget was removed still
-// have a cached `openai/outputTemplate` pointing at this URI, so ChatGPT fetches
-// it on every warp_book call. Serve a minimal STATIC card (no script — the old
-// interactive one was blocked by the sandbox anyway) so those connections don't
-// hit a resource-not-found error. New connections carry no outputTemplate and
-// never request it. The real action is the booking link in the tool's text.
+// Checkout widget: an inline-script card ChatGPT renders from the tool output.
+// Its "Confirm & Pay" button calls window.openai.openExternal(checkout_url), so
+// the link is drawn by ChatGPT from the result — the model cannot substitute a
+// URL of its own. The earlier version failed only because its CSP wasn't set;
+// openai/widgetCSP.redirect_domains below whitelists our checkout origin so the
+// button is actually allowed to open it.
 const CHECKOUT_CARD_RESOURCE_URI = "ui://warp/checkout-card";
-const checkoutCardStub = () =>
-  `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>` +
-  `<body style="margin:0;font-family:-apple-system,system-ui,sans-serif">` +
-  `<div style="border:1px solid rgba(127,127,127,.22);border-radius:14px;padding:16px;max-width:460px">` +
-  `<div style="font-size:14px;font-weight:650">Your Warp booking is ready</div>` +
-  `<div style="font-size:12.5px;opacity:.62;margin-top:5px;line-height:1.5">Open the booking link in the message to confirm the details and pay securely on Warp.</div>` +
-  `</div></body></html>`;
+const CHECKOUT_DOMAINS = [CHECKOUT_BASE_URL];
+// _meta that wires the widget template + its CSP onto the booking tool/result.
+const CHECKOUT_META = {
+  "openai/outputTemplate": CHECKOUT_CARD_RESOURCE_URI,
+  "openai/widgetCSP": { connect_domains: CHECKOUT_DOMAINS, resource_domains: CHECKOUT_DOMAINS, redirect_domains: CHECKOUT_DOMAINS },
+  ui: { resourceUri: CHECKOUT_CARD_RESOURCE_URI, csp: { connectDomains: CHECKOUT_DOMAINS, resourceDomains: CHECKOUT_DOMAINS, redirect_domains: CHECKOUT_DOMAINS } },
+};
+const checkoutCardTemplate = () =>
+  `<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>:root{color-scheme:light dark}*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}.card{border:1px solid rgba(127,127,127,.22);border-radius:14px;padding:18px;max-width:460px;background:rgba(127,127,127,.04)}.row{display:flex;align-items:center;justify-content:space-between;gap:12px}.lane{font-size:15px;font-weight:650}.sub{font-size:12.5px;opacity:.62;margin-top:3px}.price{font-size:22px;font-weight:750;white-space:nowrap}.price small{font-size:12px;font-weight:600;opacity:.6;margin-left:2px}.cta{display:block;width:100%;margin-top:16px;padding:12px 16px;border:0;cursor:pointer;border-radius:9px;background:#00FA8A;color:#06140d;font-size:14px;font-weight:750}.note{font-size:11.5px;opacity:.55;text-align:center;margin-top:10px;line-height:1.45}.err{font-size:13px;opacity:.7;padding:4px 2px}</style></head><body><div id="root"><div class="err">Preparing your booking…</div></div><script>(function(){function data(){try{return (window.openai&&window.openai.toolOutput)||{}}catch(e){return{}}}function money(n){if(typeof n!=="number"||!isFinite(n))return null;return "$"+n.toLocaleString(undefined,{maximumFractionDigits:0})}function go(u){if(!u)return;try{if(window.openai&&window.openai.openExternal){window.openai.openExternal(u);return}}catch(e){}window.open(u,"_blank","noopener")}function render(){var d=data();var root=document.getElementById("root");if(!d||!d.checkout_url){root.innerHTML='<div class="err">Preparing your booking…</div>';return}var lane=(d.origin_zip&&d.destination_zip)?(d.origin_zip+" \\u2192 "+d.destination_zip):"Your shipment";var sub=[d.mode,d.pickup_date].filter(Boolean).join(" \\u00b7 ");var price=money(d.amount_usd);var html='<div class="card"><div class="row"><div><div class="lane">'+lane+'</div>'+(sub?'<div class="sub">'+sub+'</div>':'')+'</div>'+(price?'<div class="price">'+price+'<small>all-in</small></div>':'')+'</div><button class="cta" id="pay">Confirm &amp; Pay on Warp &rarr;</button><div class="note">Payment is completed securely on Warp \\u2014 ChatGPT doesn\\u2019t handle the card.</div></div>';root.innerHTML=html;var b=document.getElementById("pay");if(b)b.addEventListener("click",function(){go(d.checkout_url)})}render();window.addEventListener("openai:set_globals",render)})();</script></body></html>`;
 
 // Per-request Warp API key, scoped via AsyncLocalStorage (multi-tenant).
 const keyStore = new AsyncLocalStorage<string | undefined>();
@@ -157,24 +159,31 @@ const handler = createMcpHandler(
                 `This is the only valid booking link. Payment is completed on Warp; the user returns here when done.`,
             },
           ],
-          // No structuredContent: with the widget removed there's no component
-          // (or outputSchema) to consume it, and ChatGPT rejects orphaned
-          // structuredContent as an "internal resource error". The booking link
-          // lives in the text content above, which is all the model needs.
+          // structuredContent feeds the widget (window.openai.toolOutput). It is
+          // consumed by the outputTemplate below, so it is NOT orphaned.
+          structuredContent: {
+            checkout_url: checkoutUrl,
+            origin_zip: params.origin_zip,
+            destination_zip: params.destination_zip,
+            amount_usd: params.amount_usd,
+            mode: params.mode,
+            pickup_date: params.pickup_date,
+          },
+          _meta: CHECKOUT_META,
         };
       },
     );
 
-    // Mark warp_book safe-to-call (non-destructive: it returns a link, charges
-    // nothing) so ChatGPT doesn't gate it behind an "important action" prompt.
-    // No widget/outputTemplate: ChatGPT's sandbox blocks our inline-script card,
-    // so the booking link is delivered as plain text (which the model relays).
+    // Mark warp_book safe-to-call AND attach the widget template + CSP to the
+    // tool registration (where openai/outputTemplate belongs) so ChatGPT renders
+    // the Confirm & Pay card from the tool output and allows its openExternal.
     try {
-      const bt = (s as { _registeredTools?: Record<string, { annotations?: Record<string, unknown>; update?: (c: Record<string, unknown>) => void }> })._registeredTools?.["warp_book"];
+      const bt = (s as { _registeredTools?: Record<string, { annotations?: Record<string, unknown>; _meta?: Record<string, unknown>; update?: (c: Record<string, unknown>) => void }> })._registeredTools?.["warp_book"];
       if (bt) {
         const annotations = { title: "Book shipment", readOnlyHint: false, destructiveHint: false, openWorldHint: true };
         if (typeof bt.update === "function") bt.update({ annotations });
         else bt.annotations = annotations;
+        bt._meta = { ...(bt._meta ?? {}), ...CHECKOUT_META };
       }
     } catch { /* best-effort */ }
 
@@ -192,11 +201,10 @@ const handler = createMcpHandler(
     s.registerResource("warp-batch-quote-card", BATCH_QUOTE_CARD_RESOURCE_URI,
       { description: "Inline batch-quote card after warp_batch_quote.", mimeType: "text/html" },
       async () => ({ contents: [{ uri: BATCH_QUOTE_CARD_RESOURCE_URI, mimeType: "text/html", text: batchQuoteCardTemplate() }] }));
-    // Legacy fallback resource (see shim note above) — keeps pre-removal
-    // connections from erroring on the cached outputTemplate fetch.
+    // Checkout widget — the interactive Confirm & Pay card (see CHECKOUT_META).
     s.registerResource("warp-checkout-card", CHECKOUT_CARD_RESOURCE_URI,
-      { description: "Static fallback card for legacy connections.", mimeType: MCP_APP_MIME_TYPE },
-      async () => ({ contents: [{ uri: CHECKOUT_CARD_RESOURCE_URI, mimeType: MCP_APP_MIME_TYPE, text: checkoutCardStub() }] }));
+      { description: "Confirm & Pay card shown after warp_book.", mimeType: MCP_APP_MIME_TYPE },
+      async () => ({ contents: [{ uri: CHECKOUT_CARD_RESOURCE_URI, mimeType: MCP_APP_MIME_TYPE, text: checkoutCardTemplate(), _meta: { ui: { prefersBorder: true } } }] }));
   },
   {
     serverInfo: {
