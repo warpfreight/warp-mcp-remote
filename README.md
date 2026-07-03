@@ -4,7 +4,7 @@ A hosted, **remote (Streamable-HTTP)** MCP endpoint for the Warp freight API —
 and track LTL/FTL shipments from any MCP-compatible AI agent (Claude, ChatGPT, Cursor, …).
 
 It does **not** re-implement anything: it deep-imports the **live published tools** from
-[`warp-agent-mcp@0.13.2`](https://www.npmjs.com/package/warp-agent-mcp) (the same 23 tools that
+[`warp-agent-mcp@0.15.0`](https://www.npmjs.com/package/warp-agent-mcp) (the same 25 tools that
 ship in the local stdio server) and serves them over HTTP via Vercel's
 [`mcp-handler`](https://github.com/vercel/mcp-handler). To update the tools, bump the
 `warp-agent-mcp` dependency.
