@@ -5,7 +5,7 @@ import { peekCheckout } from "@/lib/checkout";
 import CheckoutForm from "./CheckoutForm";
 
 const wrap: React.CSSProperties = {
-  minHeight: "100vh", margin: 0, background: "#0d0d0d", color: "#e6e6e6",
+  minHeight: "100vh", margin: 0, background: "#0a111b", color: "#f0f2f5",
   fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
   display: "flex", alignItems: "flex-start", justifyContent: "center", padding: "40px 16px",
 };
@@ -18,7 +18,7 @@ export function CheckoutShell({ token, redirectUrl }: { token: string; redirectU
       <main style={wrap}>
         <div style={{ maxWidth: 420, textAlign: "center", paddingTop: 40 }}>
           <div style={{ fontSize: 17, fontWeight: 700, marginBottom: 8 }}>This checkout link has expired</div>
-          <p style={{ fontSize: 14, color: "#a0a0a0", lineHeight: 1.6 }}>
+          <p style={{ fontSize: 14, color: "#b0b8c4", lineHeight: 1.6 }}>
             Checkout links are valid for 30 minutes. Head back to ChatGPT and run the booking again to get a fresh one.
           </p>
         </div>

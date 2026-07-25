@@ -2,9 +2,11 @@ import type { ReactNode } from "react";
 
 export const INSTALL_GUIDE = "https://www.wearewarp.com/agents/mcp#claude-code-install";
 export const MCP_URL = "https://mcp.wearewarp.com/api/mcp";
-const ACCENT = "#00fa8a";
+// Canonical logo green — warp-site's brand guard reserves #00FF33 for the
+// wordmark and bans it as a UI accent (UI accents use --accent #4ade80).
+const ACCENT = "#00FF33";
 
-/** Official Warp wordmark (warp-site/public/warp-logo.svg), in the Lumen Spring Green accent. */
+/** Official Warp wordmark (warp-site/public/warp-logo.svg), in the canonical logo green. */
 export function WarpMark({ width = 92 }: { width?: number }) {
   return (
     <svg width={width} height={(width * 186) / 660} viewBox="0 0 660 186" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Warp" style={{ display: "block" }}>

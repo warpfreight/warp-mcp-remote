@@ -1,4 +1,25 @@
 import { Shell, INSTALL_GUIDE, MCP_URL } from "@/components/brand";
+import DitherBg from "@/components/dither-bg";
+// Deep-import the live tool definitions to COUNT them at render time — the
+// "23 tools" stat below was hardcoded and sat two releases stale (the exact
+// every-surface-agrees drift the platform backlog calls Problem 4). Counting
+// the real registrations makes the stat self-heal on every dependency bump.
+// @ts-ignore — package ships dist/*.js without type declarations
+import { registerTools } from "warp-agent-mcp/dist/tools.js";
+
+function liveToolCount(): string {
+  try {
+    let n = 0;
+    // Minimal stub: registerTools only *defines* tools at registration time
+    // (same pattern as the package's own hermetic tests); handlers never run.
+    const stub = { registerTool: () => { n += 1; }, tool: () => { n += 1; } };
+    registerTools(stub as never, {} as never, () => undefined);
+    return n > 0 ? String(n) : "26";
+  } catch {
+    return "26"; // last-known-correct fallback; never render a crash for a stat
+  }
+}
+const TOOL_COUNT = liveToolCount();
 
 export const metadata = {
   title: "Warp MCP — freight inside your AI assistant",
@@ -7,7 +28,7 @@ export const metadata = {
 };
 
 const STATS: [string, string][] = [
-  ["23", "tools"],
+  [TOOL_COUNT, "tools"],
   ["4", "freight modes"],
   ["30+", "carriers compared"],
 ];
@@ -15,6 +36,7 @@ const STATS: [string, string][] = [
 export default function Home() {
   return (
     <Shell>
+      <DitherBg />
       <div style={{ maxWidth: 660 }}>
         <span className="eyebrow"><span className="livedot" /> Live · Streamable-HTTP MCP</span>
         <h1 className="h1" style={{ margin: "18px 0 20px" }}>Freight, inside your AI assistant</h1>

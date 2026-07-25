@@ -1,21 +1,23 @@
-/* Warp Lumen v0.15 — applied tokens (neutral obsidian canvas, single green accent). */
+/* Warp brand tokens — aligned to warp-site globals.css (mint accent over the
+   bluish ink family; the previous #00fa8a/#0d0d0d matched nothing on the site). */
 :root {
-  --bg: #0d0d0d;            /* Obsidian — neutral near-black, R=G=B */
-  --surface: #161616;
-  --surface-2: #1b1b1b;
-  --border: rgba(255, 255, 255, 0.08);
-  --border-strong: rgba(255, 255, 255, 0.14);
-  --text: #e6e6e6;          /* Light anchor */
-  --muted: #9b9b9b;
-  --faint: #6b6b6b;
-  --accent: #00fa8a;        /* Spring Green — action / live / success only */
-  --accent-ink: #06150d;
+  --bg: #0a111b;            /* bluish ink canvas */
+  --surface: #131c2a;       /* --warp-bg */
+  --surface-2: #1a2332;
+  --border: rgba(148, 163, 184, 0.12);
+  --border-strong: rgba(148, 163, 184, 0.22);
+  --text: #f0f2f5;          /* --warp-text */
+  --muted: #b0b8c4;         /* --warp-text-muted */
+  --faint: #7a8494;         /* --warp-text-dim */
+  --accent: #4ade80;        /* --warp-accent */
+  --accent-ink: #0b1613;
   --radius: 16px;
   --maxw: 860px;
 }
 
 * { box-sizing: border-box; }
 html, body { margin: 0; padding: 0; }
+main { position: relative; z-index: 1; }
 body {
   background: var(--bg);
   color: var(--text);
@@ -24,7 +26,7 @@ body {
   text-rendering: optimizeLegibility;
   line-height: 1.5;
 }
-::selection { background: rgba(0, 250, 138, 0.25); }
+::selection { background: rgba(74, 222, 128, 0.25); }
 
 .wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 24px; }
 
@@ -63,9 +65,8 @@ body {
 .btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--border-strong); }
 .btn-ghost:hover { border-color: var(--accent); color: var(--accent); }
 
-/* Signature: LiveDot (pulsing 8px green) */
-.livedot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); display: inline-block; box-shadow: 0 0 0 0 rgba(0, 250, 138, 0.5); animation: pulse 2.4s infinite; }
-@keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(0, 250, 138, 0.45); } 70% { box-shadow: 0 0 0 7px rgba(0, 250, 138, 0); } 100% { box-shadow: 0 0 0 0 rgba(0, 250, 138, 0); } }
+/* Signature: LiveDot — static status dot, never animated. */
+.livedot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); display: inline-block; box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.18); }
 
 /* Signature: Stat (big tabular number) */
 .stat-num { font-size: 30px; font-weight: 800; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
