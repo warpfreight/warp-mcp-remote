@@ -95,3 +95,32 @@ export async function isRevoked(jti: string): Promise<boolean> {
     return false; // availability over revocation when KV is unreachable
   }
 }
+
+/**
+ * Fixed-window rate limit for ANONYMOUS MCP tool calls (keyless discovery,
+ * backlog step 4). Keyed per end-client IP, hour bucket, default 60/hr to
+ * mirror warp-site's own anonymous quote ceiling (quoteRateLimit.ts) — so the
+ * remote never lets an anonymous caller do more through us than they could do
+ * against the public REST API directly.
+ *
+ * Upstash-backed → enforced ACROSS serverless instances (unlike upstream's
+ * per-instance window). Fails OPEN without KV env (local dev), consistent with
+ * every other helper here: a KV outage degrades abuse mitigation, never
+ * availability — and upstream's own limiter still backstops.
+ */
+export async function anonRateAllow(
+  ip: string,
+  limit = 60,
+): Promise<{ allowed: boolean; remaining: number; retryAfterSec: number }> {
+  const HOUR_MS = 3_600_000;
+  const retryAfterSec = Math.ceil((HOUR_MS - (Date.now() % HOUR_MS)) / 1000);
+  if (!redis || !ip) return { allowed: true, remaining: limit, retryAfterSec };
+  try {
+    const bucket = `anonrl:${ip}:${Math.floor(Date.now() / HOUR_MS)}`;
+    const n = await redis.incr(bucket);
+    if (n === 1) await redis.expire(bucket, 3_700); // bucket TTL ≥ window
+    return { allowed: n <= limit, remaining: Math.max(0, limit - n), retryAfterSec };
+  } catch {
+    return { allowed: true, remaining: limit, retryAfterSec };
+  }
+}
