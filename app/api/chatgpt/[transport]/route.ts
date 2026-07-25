@@ -72,28 +72,25 @@ const handler = createMcpHandler(
     //    removes them from tools/list. Defensive: only delete what's present.
     const reg = (s as { _registeredTools?: Record<string, unknown> })._registeredTools;
     if (reg) {
+      // Wire names are UNPREFIXED since warp-agent-mcp 0.15.0 — deleting the
+      // old warp_* names silently no-oped and left the REAL charging tools
+      // exposed in ChatGPT (caught 2026-07-25 before the 0.16.0 deploy; the
+      // prefixed deletes stay as belt-and-suspenders for any downgrade).
+      delete reg["book"];
+      delete reg["batch_book"];
       delete reg["warp_book"];
       delete reg["warp_batch_book"];
+      // In-chat email+password login is refused on the hosted connector (OAuth
+      // is the auth path; passwords must never transit a multi-tenant lambda).
+      delete reg["login"];
     }
 
-    // Anthropic-directory hint patch is irrelevant here; keep parity defensively.
-    try {
-      const r2 = (s as { _registeredTools?: Record<string, { annotations?: Record<string, unknown>; update?: (c: Record<string, unknown>) => void }> })._registeredTools;
-      const setHint = (name: string, ann: Record<string, unknown>) => {
-        const t = r2?.[name];
-        if (!t) return;
-        if (typeof t.update === "function") t.update({ annotations: { ...(t.annotations ?? {}), ...ann } });
-        else t.annotations = { ...(t.annotations ?? {}), ...ann };
-      };
-      setHint("warp_login", { readOnlyHint: false });
-      setHint("warp_save_load_template", { readOnlyHint: false });
-    } catch { /* best-effort */ }
 
     // 3. Register the compliant, NON-charging booking tool. It does not move money;
     //    it mints a sealed checkout session and returns a link to our /checkout
     //    page, where the user confirms + pays on Warp (external checkout).
     s.tool(
-      "warp_book",
+      "book",
       "Book a quoted Warp shipment. CALL THIS whenever the user asks to book, confirm, place, or proceed with a shipment from a quote — this tool IS the booking action. It returns a secure Warp checkout link; present that link to the user so they can confirm addresses and pay on Warp's own site (payment is completed there, not in ChatGPT). You do NOT need any additional login, payment details, or address entry to call this — only the quote_id. CRITICAL: ALWAYS pass every pickup and delivery detail the user has given you (contactName, street, city, state, zipCode, phone, email) in the pickup and delivery parameters of THIS call. The checkout page only CONFIRMS these — it does not collect them — so never defer address entry to checkout and never make the user re-enter what they already told you. Never tell the user that booking is unavailable or that you lack a connection; always call this tool and give them the link.",
       {
         quote_id: z.string().describe("Quote ID from warp_quote_id (Warp) or the id of any market option returned by a quote tool"),
@@ -178,7 +175,7 @@ const handler = createMcpHandler(
     // tool registration (where openai/outputTemplate belongs) so ChatGPT renders
     // the Confirm & Pay card from the tool output and allows its openExternal.
     try {
-      const bt = (s as { _registeredTools?: Record<string, { annotations?: Record<string, unknown>; _meta?: Record<string, unknown>; update?: (c: Record<string, unknown>) => void }> })._registeredTools?.["warp_book"];
+      const bt = (s as { _registeredTools?: Record<string, { annotations?: Record<string, unknown>; _meta?: Record<string, unknown>; update?: (c: Record<string, unknown>) => void }> })._registeredTools?.["book"];
       if (bt) {
         const annotations = { title: "Book shipment", readOnlyHint: false, destructiveHint: false, openWorldHint: true };
         if (typeof bt.update === "function") bt.update({ annotations });
@@ -196,20 +193,20 @@ const handler = createMcpHandler(
       { description: "Inline quote card (MCP Apps variant).", mimeType: MCP_APP_MIME_TYPE },
       async () => ({ contents: [{ uri: QUOTE_CARD_MCP_RESOURCE_URI, mimeType: MCP_APP_MIME_TYPE, text: quoteCardMcpTemplate() }] }));
     s.registerResource("warp-bookings-card", BOOKINGS_CARD_RESOURCE_URI,
-      { description: "Inline shipments card after warp_list_bookings.", mimeType: "text/html" },
+      { description: "Inline shipments card after list_bookings.", mimeType: "text/html" },
       async () => ({ contents: [{ uri: BOOKINGS_CARD_RESOURCE_URI, mimeType: "text/html", text: bookingsCardTemplate() }] }));
     s.registerResource("warp-batch-quote-card", BATCH_QUOTE_CARD_RESOURCE_URI,
-      { description: "Inline batch-quote card after warp_batch_quote.", mimeType: "text/html" },
+      { description: "Inline batch-quote card after batch_quote.", mimeType: "text/html" },
       async () => ({ contents: [{ uri: BATCH_QUOTE_CARD_RESOURCE_URI, mimeType: "text/html", text: batchQuoteCardTemplate() }] }));
     // Checkout widget — the interactive Confirm & Pay card (see CHECKOUT_META).
     s.registerResource("warp-checkout-card", CHECKOUT_CARD_RESOURCE_URI,
-      { description: "Confirm & Pay card shown after warp_book.", mimeType: MCP_APP_MIME_TYPE },
+      { description: "Confirm & Pay card shown after book.", mimeType: MCP_APP_MIME_TYPE },
       async () => ({ contents: [{ uri: CHECKOUT_CARD_RESOURCE_URI, mimeType: MCP_APP_MIME_TYPE, text: checkoutCardTemplate(), _meta: { ui: { prefersBorder: true } } }] }));
   },
   {
     serverInfo: {
       name: "warp-freight",
-      version: "0.13.2",
+      version: "0.16.0",
       icons: [
         { src: "https://mcp.wearewarp.com/icon.png", mimeType: "image/png", sizes: ["512x512"] },
         { src: "https://mcp.wearewarp.com/icon.svg", mimeType: "image/svg+xml", sizes: ["any"] },
@@ -219,7 +216,7 @@ const handler = createMcpHandler(
     // it away from its baked-in knowledge of warp.com's public pages, which it
     // otherwise offers as a (broken) "booking" link.
     instructions:
-      "Warp Freight rules for the assistant. (1) When the user only asks for a quote, price, rate, or carrier comparison, do NOT call warp_book and do NOT show, generate, or mention ANY booking link — a quote reply must contain ZERO booking links; simply say you can book it whenever they're ready. (2) Call warp_book ONLY after the user explicitly asks to book, confirm, or place the shipment; it returns the only valid booking link (an https://mcp.wearewarp.com/b/... URL) — present that link exactly as returned, and pass the user's pickup and delivery contacts. (3) NEVER send the user to customer.wearewarp.com, www.wearewarp.com, /public/freight-quote, or any URL you construct or recall yourself; those are not booking links. Quotes and tracking are read-only; booking is the only action, only via warp_book, only after the user asks.",
+      "Warp Freight rules for the assistant. (1) When the user only asks for a quote, price, rate, or carrier comparison, do NOT call the book tool and do NOT show, generate, or mention ANY booking link — a quote reply must contain ZERO booking links; simply say you can book it whenever they're ready. (2) Call `book` ONLY after the user explicitly asks to book, confirm, or place the shipment; it returns the only valid booking link (an https://mcp.wearewarp.com/b/... URL) — present that link exactly as returned, and pass the user's pickup and delivery contacts. (3) NEVER send the user to customer.wearewarp.com, www.wearewarp.com, /public/freight-quote, or any URL you construct or recall yourself; those are not booking links. Quotes and tracking are read-only; booking is the only action, only via the `book` tool, only after the user asks.",
   },
   { basePath: "/api/chatgpt", maxDuration: 60 },
 );
