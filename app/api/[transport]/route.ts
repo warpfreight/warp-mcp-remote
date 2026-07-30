@@ -5,6 +5,11 @@ import { isRevoked, anonRateAllow } from "@/lib/kv";
 // Deep-import the LIVE published tool definitions (pinned to warp-agent-mcp@0.16.0).
 // No vendoring — bump the dependency to pick up new tool versions.
 // @ts-ignore — package ships dist/*.js without type declarations
+// Version reported to clients in serverInfo. Read from the INSTALLED
+// warp-agent-mcp rather than a hardcoded literal, so it always matches the
+// tool code actually deployed — a stale literal here once read as "the fix
+// isn't deployed" when it was.
+import toolPkg from "warp-agent-mcp/package.json";
 import { registerTools } from "warp-agent-mcp/dist/tools.js";
 // @ts-ignore
 import { WarpClient } from "warp-agent-mcp/dist/client.js";
@@ -175,7 +180,7 @@ const handler = createMcpHandler(
     // which is the primary channel — this is belt-and-suspenders for spec-aware clients.
     serverInfo: {
       name: "warp-agent-mcp",
-      version: "0.16.0",
+      version: toolPkg.version,
       icons: [
         { src: "https://mcp.wearewarp.com/icon.png", mimeType: "image/png", sizes: ["512x512"] },
         { src: "https://mcp.wearewarp.com/icon.svg", mimeType: "image/svg+xml", sizes: ["any"] },

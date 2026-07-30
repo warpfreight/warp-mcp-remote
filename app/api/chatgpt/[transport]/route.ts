@@ -19,6 +19,11 @@ import { sealCheckout, type CheckoutAddr } from "@/lib/checkout";
 // Live published tools + client (pinned to warp-agent-mcp@0.13.2). Deep imports —
 // the package ships dist/*.js with no exports map / type declarations.
 // @ts-ignore
+// Version reported to clients in serverInfo. Read from the INSTALLED
+// warp-agent-mcp rather than a hardcoded literal, so it always matches the
+// tool code actually deployed — a stale literal here once read as "the fix
+// isn't deployed" when it was.
+import toolPkg from "warp-agent-mcp/package.json";
 import { registerTools } from "warp-agent-mcp/dist/tools.js";
 // @ts-ignore
 import { WarpClient } from "warp-agent-mcp/dist/client.js";
@@ -206,7 +211,7 @@ const handler = createMcpHandler(
   {
     serverInfo: {
       name: "warp-freight",
-      version: "0.16.0",
+      version: toolPkg.version,
       icons: [
         { src: "https://mcp.wearewarp.com/icon.png", mimeType: "image/png", sizes: ["512x512"] },
         { src: "https://mcp.wearewarp.com/icon.svg", mimeType: "image/svg+xml", sizes: ["any"] },
