@@ -3,7 +3,7 @@ import "./globals.css";
 export const metadata = {
   title: "Warp MCP — freight inside your AI assistant",
   description:
-    "Quote, book, and track LTL & FTL freight from Claude, ChatGPT, or any MCP-compatible AI — grounded in your live Warp account.",
+    "Quote, book, and track LTL & FTL freight from Perplexity, Claude, ChatGPT, or any MCP-compatible AI — grounded in your live Warp account.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

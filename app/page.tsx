@@ -24,7 +24,7 @@ const TOOL_COUNT = liveToolCount();
 export const metadata = {
   title: "Warp MCP — freight inside your AI assistant",
   description:
-    "Quote, book, and track LTL & FTL freight from Claude, ChatGPT, or any MCP-compatible AI — grounded in your live Warp account.",
+    "Quote, book, and track LTL & FTL freight from Perplexity, Claude, ChatGPT, or any MCP-compatible AI — grounded in your live Warp account.",
 };
 
 const STATS: [string, string][] = [
@@ -41,7 +41,7 @@ export default function Home() {
         <span className="eyebrow"><span className="livedot" /> Live · Streamable-HTTP MCP</span>
         <h1 className="h1" style={{ margin: "18px 0 20px" }}>Freight, inside your AI assistant</h1>
         <p className="lead" style={{ margin: 0 }}>
-          Warp&apos;s remote MCP server lets Claude, ChatGPT, and any MCP-compatible AI{" "}
+          Warp&apos;s remote MCP server lets Perplexity, Claude, ChatGPT, and any MCP-compatible AI{" "}
           <span style={{ color: "var(--text)", fontWeight: 600 }}>quote, book, and track</span> LTL &amp; FTL
           shipments — grounded in your live Warp account, not generic answers.
         </p>
