@@ -70,9 +70,10 @@ function authRequiredResult(tool: string) {
         `Sign in to Warp to use \`${tool}\`. Quotes are free and need no account — ` +
         `\`compare_modes\`, \`ltl_quote\`, \`ftl_quote\`, \`van_quote\`, \`box_truck_quote\`, ` +
         `\`ltl_market_options\`, and \`batch_quote\` all work right now, unauthenticated.\n\n` +
-        `Next: connect your Warp account to this connector (in Claude: Settings → Connectors → Warp → Sign in, ` +
-        `or remove and re-add https://mcp.wearewarp.com/api/mcp and complete the sign-in prompt). ` +
-        `New to Warp? Create an account at https://www.wearewarp.com/agents/account — then retry \`${tool}\`.`,
+        `Next: connect your Warp account using your assistant's connector sign-in — open this ` +
+        `connector's settings and complete the sign-in prompt (or remove and re-add ` +
+        `https://mcp.wearewarp.com/api/mcp). New to Warp? Create an account at ` +
+        `https://www.wearewarp.com/agents/account — then retry \`${tool}\`.`,
     }],
     isError: true,
   };
@@ -126,9 +127,9 @@ const handler = createMcpHandler(
               type: "text" as const,
               text:
                 "This hosted connector authenticates with OAuth, not in-chat credentials — " +
-                "never send your Warp password in chat. Use your client's connector sign-in " +
-                "(in Claude: Settings → Connectors → Warp → Sign in). The `login` tool only " +
-                "exists for the local `npx warp-agent-mcp` install.",
+                "never send your Warp password in chat. Use your assistant's connector sign-in — " +
+                "open this connector in your client's settings and complete the sign-in prompt. " +
+                "The `login` tool only exists for the local `npx warp-agent-mcp` install.",
             }],
             isError: true,
           }));
