@@ -222,7 +222,7 @@ function isAllowedOrigin(origin: string): boolean {
   let host: string;
   try { host = new URL(origin).hostname; } catch { return false; }
   const ok = (d: string) => host === d || host.endsWith("." + d);
-  return ok("claude.ai") || ok("claude.com") || ok("anthropic.com") || ok("chatgpt.com") || ok("openai.com") || ok("wearewarp.com") || host === "localhost" || host === "127.0.0.1";
+  return ok("claude.ai") || ok("claude.com") || ok("anthropic.com") || ok("chatgpt.com") || ok("openai.com") || ok("perplexity.ai") || ok("wearewarp.com") || host === "localhost" || host === "127.0.0.1";
 }
 
 const withAuth = async (req: Request): Promise<Response> => {
