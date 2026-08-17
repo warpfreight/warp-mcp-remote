@@ -1,6 +1,6 @@
 {
   "name": "warp-mcp-remote",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "private": true,
   "description": "Remote (Streamable-HTTP) MCP endpoint for the Warp freight API — wraps the live warp-agent-mcp tools with per-request API-key auth.",
   "scripts": {

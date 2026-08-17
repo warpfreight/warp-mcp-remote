@@ -54,6 +54,7 @@ const ANON_TOOLS = new Set([
   "ltl_market_options",
   "compare_modes",
   "batch_quote",
+  "consolidate",
   "status",
 ]);
 
@@ -69,7 +70,7 @@ function authRequiredResult(tool: string) {
       text:
         `Sign in to Warp to use \`${tool}\`. Quotes are free and need no account — ` +
         `\`compare_modes\`, \`ltl_quote\`, \`ftl_quote\`, \`van_quote\`, \`box_truck_quote\`, ` +
-        `\`ltl_market_options\`, and \`batch_quote\` all work right now, unauthenticated.\n\n` +
+        `\`ltl_market_options\`, \`batch_quote\`, and \`consolidate\` all work right now, unauthenticated.\n\n` +
         `Next: connect your Warp account using your assistant's connector sign-in — open this ` +
         `connector's settings and complete the sign-in prompt (or remove and re-add ` +
         `https://mcp.wearewarp.com/api/mcp). New to Warp? Create an account at ` +
