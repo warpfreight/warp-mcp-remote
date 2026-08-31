@@ -7,6 +7,8 @@
 // agent's `wak_live_` proxy key, and rate-limits the attempt. This service
 // therefore never touches the raw upstream key — it only ever sees/forwards the
 // scoped proxy key, which is the same key the /api/v1/warp gateway expects.
+import { CONNECTOR_UA } from "./ua";
+
 const WARP_SITE = process.env.WARP_SITE_URL ?? "https://www.wearewarp.com";
 
 export type LoginResult = { ok: true; key: string } | { ok: false; error: string };
@@ -16,6 +18,9 @@ export async function loginAndGetKey(email: string, password: string, ip?: strin
     const res = await fetch(`${WARP_SITE}/api/v1/agents/login`, {
       method: "POST",
       headers: {
+        // Tag the sign-in/mint call so this key's creation is attributable to
+        // the MCP connector door server-side.
+        "user-agent": CONNECTOR_UA,
         "Content-Type": "application/json",
         // Forward the end-user's IP so warp-site rate-limits per user, not per
         // this service's shared serverless egress IP.

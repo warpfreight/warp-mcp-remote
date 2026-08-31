@@ -14,6 +14,7 @@ import { AsyncLocalStorage } from "node:async_hooks";
 import { z } from "zod";
 import { unseal, originOf, now, type AccessToken } from "@/lib/oauth";
 import { isRevoked, storeShortCheckout } from "@/lib/kv";
+import { CONNECTOR_UA } from "@/lib/ua";
 import crypto from "node:crypto";
 import { sealCheckout, type CheckoutAddr } from "@/lib/checkout";
 // Live published tools + client (pinned to warp-agent-mcp@0.13.2). Deep imports —
@@ -64,7 +65,7 @@ const getApiKey = (): string | undefined => keyStore.getStore();
 
 const handler = createMcpHandler(
   (server: unknown) => {
-    const client = new WarpClient(WARP_API_URL, getApiKey);
+    const client = new WarpClient(WARP_API_URL, getApiKey, (): Record<string, string> => ({ "user-agent": CONNECTOR_UA }));
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const s = server as any;
 

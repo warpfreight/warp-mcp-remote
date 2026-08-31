@@ -2,6 +2,7 @@ import { createMcpHandler } from "mcp-handler";
 import { AsyncLocalStorage } from "node:async_hooks";
 import { unseal, originOf, now, type AccessToken } from "@/lib/oauth";
 import { isRevoked, anonRateAllow } from "@/lib/kv";
+import { CONNECTOR_UA } from "@/lib/ua";
 // Deep-import the LIVE published tool definitions (pinned to warp-agent-mcp@0.16.0).
 // No vendoring — bump the dependency to pick up new tool versions.
 // @ts-ignore — package ships dist/*.js without type declarations
@@ -86,7 +87,11 @@ const handler = createMcpHandler(
     // in warp-agent-mcp 0.16.0; core headers always win on conflict.
     const client = new WarpClient(WARP_API_URL, getApiKey, (): Record<string, string> => {
       const ip = getClientIp();
-      return ip ? { "x-forwarded-for": ip } : {};
+      // Identify connector traffic as warp-mcp-remote/* (overrides the package's
+      // default warp-agent-mcp UA, which is set before the extraHeaders spread).
+      const h: Record<string, string> = { "user-agent": CONNECTOR_UA };
+      if (ip) h["x-forwarded-for"] = ip;
+      return h;
     });
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const s = server as any;
