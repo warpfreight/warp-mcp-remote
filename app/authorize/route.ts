@@ -346,11 +346,13 @@ function cardPage(p: P, pk: string, clientSecret: string, pending: string): Resp
       form.addEventListener("submit", function (ev) {
         ev.preventDefault();
         btn.disabled = true; btn.textContent = "Saving…"; errEl.style.display = "none";
-        stripe.confirmSetup({ elements: elements, clientSecret: cs, redirect: "if_required" }).then(function (res) {
+        // Elements was created WITH the client_secret (line above), so confirmSetup
+        // must NOT be given it again — passing both throws a Stripe IntegrationError.
+        stripe.confirmSetup({ elements: elements, redirect: "if_required" }).then(function (res) {
           if (res.error) { errEl.textContent = res.error.message || "Card could not be saved."; errEl.style.display = "block"; btn.disabled = false; btn.textContent = "Save card & connect"; return; }
           document.getElementById("pm").value = (res.setupIntent && res.setupIntent.payment_method) || "";
           form.submit();
-        }).catch(function () { errEl.textContent = "Card could not be saved. Try again."; errEl.style.display = "block"; btn.disabled = false; btn.textContent = "Save card & connect"; });
+        }).catch(function (e) { errEl.textContent = (e && e.message) ? e.message : "Card could not be saved. Try again."; errEl.style.display = "block"; btn.disabled = false; btn.textContent = "Save card & connect"; });
       });
     })();
     </script>`;
