@@ -233,6 +233,7 @@ function loginPage(p: P, errorMsg?: string): Response {
       <input id="email" name="email" type="email" autocomplete="email" required autofocus>
       <label for="password">Password</label>
       <input id="password" name="password" type="password" autocomplete="current-password" required>
+      <label style="display:flex;align-items:center;gap:8px;margin:12px 0 4px;font-size:13px;font-weight:400;color:var(--dim);text-transform:none;cursor:pointer"><input type="checkbox" name="update_card" value="1" style="width:auto;margin:0;accent-color:#4ade80"> Update the card on file after signing in</label>
       <button type="submit">Sign in &amp; authorize</button>
     </form>
     ${deny ? `<a class="cancel" href="${esc(deny)}">Cancel and return</a>` : ""}`;
@@ -318,7 +319,7 @@ const CARD_TTL = 900; // 15 min to enter a card
 
 /** Screen 4 — add a card (embedded Stripe Elements), writing to the same
  *  card-on-file as wearewarp.com/agents/account. */
-function cardPage(p: P, pk: string, clientSecret: string, pending: string): Response {
+function cardPage(p: P, pk: string, clientSecret: string, pending: string, updating = false): Response {
   const body = `<div id="pay-err" class="err" style="display:none"></div>
     <div id="payment-element" style="margin:2px 0 18px"></div>
     <form id="card-form" method="POST" action="/authorize">
@@ -357,19 +358,30 @@ function cardPage(p: P, pk: string, clientSecret: string, pending: string): Resp
     })();
     </script>`;
   const foot = `<p class="fine">Your card is saved with Stripe on your Warp account &mdash; the same card on file at wearewarp.com. Booking through the assistant charges this card.</p>`;
-  return shell(p, { title: "Add a payment method", sub: "Add a card so the assistant can book freight for you. You can skip and add it later.", body, foot });
+  const title = updating ? "Update your payment method" : "Add a payment method";
+  const sub = updating
+    ? "Add a new card to replace the one on file. Skip to keep your current card."
+    : "Add a card so the assistant can book freight for you. You can skip and add it later.";
+  return shell(p, { title, sub, body, foot });
 }
 
-// After a successful login/signup: if the account has no card yet and we have a
-// publishable key + the ids the card API needs, offer the card step; otherwise
-// issue the auth code and connect. Card failures never block connecting.
-async function afterAuth(p: P, acct: { key: string; agentId?: string; sessionToken?: string; hasCard?: boolean }, ip?: string): Promise<Response> {
+// After a successful login/signup: offer the card step when the account has no
+// card yet, OR when a returning user explicitly asked to update the card on file
+// (forceCard). Otherwise issue the auth code and connect. Card failures never
+// block connecting — a carded account always falls through to connect.
+async function afterAuth(
+  p: P,
+  acct: { key: string; agentId?: string; sessionToken?: string; hasCard?: boolean },
+  ip?: string,
+  forceCard = false,
+): Promise<Response> {
   const pk = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-  if (pk && acct.agentId && acct.sessionToken && !acct.hasCard) {
+  const wantCard = !acct.hasCard || forceCard;
+  if (pk && acct.agentId && acct.sessionToken && wantCard) {
     const ci = await cardIntent(acct.agentId, acct.sessionToken, ip);
     if (ci.ok) {
       const pending = seal<Pending>({ t: "pending", key: acct.key, ai: acct.agentId, st: acct.sessionToken, exp: now() + CARD_TTL });
-      return cardPage(p, pk, ci.clientSecret, pending);
+      return cardPage(p, pk, ci.clientSecret, pending, !!acct.hasCard);
     }
   }
   return issueCode(p, acct.key);
@@ -435,5 +447,6 @@ export async function POST(req: Request) {
   if (!email || !password) return loginPage(p, "Enter your email and password.");
   const r = await loginAndGetKey(email, password, ip);
   if (!r.ok) return loginPage(p, r.error);
-  return afterAuth(p, { key: r.key, agentId: r.agentId, sessionToken: r.sessionToken, hasCard: r.hasCard }, ip);
+  const forceCard = form.get("update_card") === "1";
+  return afterAuth(p, { key: r.key, agentId: r.agentId, sessionToken: r.sessionToken, hasCard: r.hasCard }, ip, forceCard);
 }
