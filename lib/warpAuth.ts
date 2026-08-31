@@ -11,7 +11,9 @@ import { CONNECTOR_UA } from "./ua";
 
 const WARP_SITE = process.env.WARP_SITE_URL ?? "https://www.wearewarp.com";
 
-export type LoginResult = { ok: true; key: string } | { ok: false; error: string };
+export type LoginResult =
+  | { ok: true; key: string; agentId?: string; email?: string; sessionToken?: string; hasCard?: boolean }
+  | { ok: false; error: string };
 
 export async function loginAndGetKey(email: string, password: string, ip?: string): Promise<LoginResult> {
   try {
@@ -32,12 +34,16 @@ export async function loginAndGetKey(email: string, password: string, ip?: strin
     const data = (await res.json().catch(() => ({}))) as {
       production_key?: string;
       booking_key?: string;
+      agent_id?: string;
+      email?: string;
+      session_token?: string;
+      has_card?: boolean;
       error?: string;
     };
     if (!res.ok) return { ok: false, error: data.error || "Invalid email or password." };
     const key = data.production_key || data.booking_key; // wak_live_ proxy key
     if (!key) return { ok: false, error: data.error || "No API key found for this account." };
-    return { ok: true, key };
+    return { ok: true, key, agentId: data.agent_id, email: data.email, sessionToken: data.session_token ?? undefined, hasCard: !!data.has_card };
   } catch {
     return { ok: false, error: "Could not reach the Warp login service. Try again." };
   }

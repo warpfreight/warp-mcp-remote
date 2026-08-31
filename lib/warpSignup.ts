@@ -27,12 +27,14 @@ export type SignupFields = {
   formRenderedAt?: string; // epoch ms string, stamped when the page rendered
 };
 
+export type Account = { key: string; agentId?: string; email?: string; sessionToken?: string };
+
 export type SignupStart =
   | { ok: true; verification_required: true; challengeId: string }
-  | { ok: true; verification_required: false; key: string }
+  | ({ ok: true; verification_required: false } & Account)
   | { ok: false; error: string };
 
-export type SignupVerify = { ok: true; key: string } | { ok: false; error: string };
+export type SignupVerify = ({ ok: true } & Account) | { ok: false; error: string };
 
 function baseBody(f: SignupFields): Record<string, unknown> {
   return {
@@ -78,6 +80,9 @@ export async function startSignup(f: SignupFields, ip?: string): Promise<SignupS
       challenge_id?: string;
       production_key?: string;
       booking_key?: string;
+      agentId?: string;
+      email?: string;
+      session_token?: string;
       error?: string;
       code?: string;
     };
@@ -90,7 +95,7 @@ export async function startSignup(f: SignupFields, ip?: string): Promise<SignupS
       return { ok: true, verification_required: true, challengeId: data.challenge_id };
     }
     const key = keyFrom(data);
-    if (key) return { ok: true, verification_required: false, key };
+    if (key) return { ok: true, verification_required: false, key, agentId: data.agentId, email: data.email, sessionToken: data.session_token ?? undefined };
     return { ok: false, error: "Signup did not complete. Please try again." };
   } catch {
     return { ok: false, error: "Could not reach the Warp signup service. Try again." };
@@ -114,6 +119,9 @@ export async function verifySignup(
     const data = (await res.json().catch(() => ({}))) as {
       production_key?: string;
       booking_key?: string;
+      agentId?: string;
+      email?: string;
+      session_token?: string;
       error?: string;
       code?: string;
     };
@@ -123,7 +131,7 @@ export async function verifySignup(
       return { ok: false, error: data.error || "Could not finish creating your account. Please try again." };
     }
     const key = keyFrom(data);
-    if (key) return { ok: true, key };
+    if (key) return { ok: true, key, agentId: data.agentId, email: data.email, sessionToken: data.session_token ?? undefined };
     return { ok: false, error: "Account created but no key was returned. Try signing in." };
   } catch {
     return { ok: false, error: "Could not reach the Warp signup service. Try again." };

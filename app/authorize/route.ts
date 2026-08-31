@@ -1,6 +1,7 @@
 import { unseal, seal, now, CODE_TTL, randomId, type ClientToken, type AuthCode } from "@/lib/oauth";
 import { loginAndGetKey } from "@/lib/warpAuth";
 import { startSignup, verifySignup, type SignupFields } from "@/lib/warpSignup";
+import { cardIntent, savePaymentMethod } from "@/lib/warpCard";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -308,6 +309,70 @@ function issueCode(p: P, key: string): Response {
   return Response.redirect(dest.toString(), 302);
 }
 
+// The card step happens BEFORE the auth code is issued, so the wak_live_ key
+// can't live in a client-side field while the user types a card. Seal it (plus
+// the ids the save call needs) into a short-lived encrypted blob the browser
+// only echoes back. Same AES-GCM sealing the auth code uses.
+type Pending = { t: "pending"; key: string; ai: string; st: string; exp: number };
+const CARD_TTL = 900; // 15 min to enter a card
+
+/** Screen 4 — add a card (embedded Stripe Elements), writing to the same
+ *  card-on-file as wearewarp.com/agents/account. */
+function cardPage(p: P, pk: string, clientSecret: string, pending: string): Response {
+  const body = `<div id="pay-err" class="err" style="display:none"></div>
+    <div id="payment-element" style="margin:2px 0 18px"></div>
+    <form id="card-form" method="POST" action="/authorize">
+      ${hiddenParams(p)}
+      <input type="hidden" name="mode" value="card_done">
+      <input type="hidden" name="pending" value="${esc(pending)}">
+      <input type="hidden" id="pm" name="payment_method_id" value="">
+      <button id="card-submit" type="submit">Save card &amp; connect</button>
+    </form>
+    <form method="POST" action="/authorize">
+      ${hiddenParams(p)}
+      <input type="hidden" name="mode" value="card_skip">
+      <input type="hidden" name="pending" value="${esc(pending)}">
+      <button type="submit" style="background:transparent;color:var(--dim);height:38px;font-weight:500;font-size:13px;margin-top:6px">Skip for now</button>
+    </form>
+    <script src="https://js.stripe.com/v3/"></script>
+    <script>
+    (function () {
+      var pk = ${JSON.stringify(pk)}, cs = ${JSON.stringify(clientSecret)};
+      if (!window.Stripe) return;
+      var stripe = Stripe(pk);
+      var elements = stripe.elements({ clientSecret: cs, appearance: { theme: "night", variables: { colorPrimary: "#4ade80", colorBackground: "#0e1622", colorText: "#f0f2f5", borderRadius: "10px", fontFamily: "system-ui, sans-serif" } } });
+      elements.create("payment", { layout: "tabs" }).mount("#payment-element");
+      var form = document.getElementById("card-form"), btn = document.getElementById("card-submit"), errEl = document.getElementById("pay-err");
+      form.addEventListener("submit", function (ev) {
+        ev.preventDefault();
+        btn.disabled = true; btn.textContent = "Saving…"; errEl.style.display = "none";
+        stripe.confirmSetup({ elements: elements, clientSecret: cs, redirect: "if_required" }).then(function (res) {
+          if (res.error) { errEl.textContent = res.error.message || "Card could not be saved."; errEl.style.display = "block"; btn.disabled = false; btn.textContent = "Save card & connect"; return; }
+          document.getElementById("pm").value = (res.setupIntent && res.setupIntent.payment_method) || "";
+          form.submit();
+        }).catch(function () { errEl.textContent = "Card could not be saved. Try again."; errEl.style.display = "block"; btn.disabled = false; btn.textContent = "Save card & connect"; });
+      });
+    })();
+    </script>`;
+  const foot = `<p class="fine">Your card is saved with Stripe on your Warp account &mdash; the same card on file at wearewarp.com. Booking through the assistant charges this card.</p>`;
+  return shell(p, { title: "Add a payment method", sub: "Add a card so the assistant can book freight for you. You can skip and add it later.", body, foot });
+}
+
+// After a successful login/signup: if the account has no card yet and we have a
+// publishable key + the ids the card API needs, offer the card step; otherwise
+// issue the auth code and connect. Card failures never block connecting.
+async function afterAuth(p: P, acct: { key: string; agentId?: string; sessionToken?: string; hasCard?: boolean }, ip?: string): Promise<Response> {
+  const pk = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
+  if (pk && acct.agentId && acct.sessionToken && !acct.hasCard) {
+    const ci = await cardIntent(acct.agentId, acct.sessionToken, ip);
+    if (ci.ok) {
+      const pending = seal<Pending>({ t: "pending", key: acct.key, ai: acct.agentId, st: acct.sessionToken, exp: now() + CARD_TTL });
+      return cardPage(p, pk, ci.clientSecret, pending);
+    }
+  }
+  return issueCode(p, acct.key);
+}
+
 export async function GET(req: Request) {
   const url = new URL(req.url);
   const p = readParams(url.searchParams);
@@ -334,7 +399,7 @@ export async function POST(req: Request) {
     const r = await startSignup(f, ip);
     if (!r.ok) return signupPage(p, r.error, f);
     if (r.verification_required) return otpPage(p, f, r.challengeId);
-    return issueCode(p, r.key); // rare: verification disabled
+    return afterAuth(p, { key: r.key, agentId: r.agentId, sessionToken: r.sessionToken, hasCard: false }, ip);
   }
 
   if (mode === "otp") {
@@ -345,7 +410,21 @@ export async function POST(req: Request) {
     if (!otp) return otpPage(p, f, challengeId, "Enter the code from your email.");
     const r = await verifySignup(f, challengeId, otp, ip);
     if (!r.ok) return otpPage(p, f, challengeId, r.error);
-    return issueCode(p, r.key);
+    return afterAuth(p, { key: r.key, agentId: r.agentId, sessionToken: r.sessionToken, hasCard: false }, ip);
+  }
+
+  if (mode === "card_done" || mode === "card_skip") {
+    const pending = unseal<Pending>(String(form.get("pending") ?? ""));
+    if (!pending || pending.t !== "pending" || pending.exp < now()) {
+      return loginPage(p, "That took too long. Please sign in again.");
+    }
+    if (mode === "card_done") {
+      const pm = String(form.get("payment_method_id") ?? "").trim();
+      // Best-effort: the card is already confirmed with Stripe, and warp-site's
+      // setup_intent.succeeded webhook also persists it — so connect regardless.
+      if (pm) { try { await savePaymentMethod(pending.ai, pm, pending.st, ip); } catch { /* webhook backs this up */ } }
+    }
+    return issueCode(p, pending.key);
   }
 
   // default: login
@@ -354,5 +433,5 @@ export async function POST(req: Request) {
   if (!email || !password) return loginPage(p, "Enter your email and password.");
   const r = await loginAndGetKey(email, password, ip);
   if (!r.ok) return loginPage(p, r.error);
-  return issueCode(p, r.key);
+  return afterAuth(p, { key: r.key, agentId: r.agentId, sessionToken: r.sessionToken, hasCard: r.hasCard }, ip);
 }
