@@ -2,7 +2,7 @@
   "name": "warp-mcp-remote",
   "version": "0.4.1",
   "private": true,
-  "description": "Remote (Streamable-HTTP) MCP endpoint for the Warp freight API \u2014 wraps the live warp-agent-mcp tools with per-request API-key auth.",
+  "description": "Remote (Streamable-HTTP) MCP endpoint for the Warp freight API — wraps the live warp-agent-mcp tools with per-request API-key auth.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -15,7 +15,7 @@
     "next": "^14.2.35",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "warp-agent-mcp": "git+https://github.com/warpfreight/warp-agent-mcp.git#01bc9d88833c1064c55aad8b0a0c6dd465816119",
+    "warp-agent-mcp": "github:warpfreight/warp-agent-mcp#1aed838",
     "zod": "^3.25.76"
   },
   "devDependencies": {
