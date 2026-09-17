@@ -48,6 +48,9 @@ const getClientIp = (): string | undefined => ctxStore.getStore()?.ip;
  *  booking/tracking/account tools obviously gate. `status` is the public
  *  health check. */
 const ANON_TOOLS = new Set([
+  // Pure guidance/calculation tools. No upstream calls or account data access.
+  "freight_workflow",
+  "compare_freight_costs",
   "van_quote",
   "box_truck_quote",
   "ftl_quote",
