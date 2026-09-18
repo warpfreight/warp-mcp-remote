@@ -1,5 +1,6 @@
 import { Shell, MCP_URL } from "@/components/brand";
 import StarterPrompts from "@/components/starter-prompts";
+import DitherBg from "@/components/dither-bg";
 
 export const metadata = {
   title: "Warp freight starter kit | Templates and prompts",
@@ -9,6 +10,7 @@ export const metadata = {
 export default function StarterKit() {
   return (
     <Shell>
+      <DitherBg />
       <div className="starter-hero">
         <span className="eyebrow">The freight starter kit</span>
         <h1 className="h1">Start with your shipments.<br />Not a blank prompt.</h1>
