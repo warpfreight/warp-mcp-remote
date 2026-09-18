@@ -30,6 +30,7 @@ export function Shell({ children }: { children: ReactNode }) {
         <header style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 16, marginBottom: 64, flexWrap: "wrap" }}>
           <a href="/" aria-label="Warp home" style={{ display: "inline-flex" }}><WarpMark width={90} /></a>
           <nav className="nav">
+            <a href="/starter-kit">Starter kit</a>
             <a href="/docs">Docs</a>
             <a href="/privacy">Privacy</a>
             <a href="/terms">Terms</a>

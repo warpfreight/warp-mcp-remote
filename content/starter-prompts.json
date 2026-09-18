@@ -1,0 +1,44 @@
+[
+  {
+    "id": "shipment-sheet",
+    "title": "Quote my shipment sheet",
+    "attach": "The completed Warp Shipment Intake workbook",
+    "outcome": "Comparable options for every shipment, with gaps flagged before you choose.",
+    "prompt": "I've attached our shipment intake workbook. Read Instructions and quote only the populated Intake rows. Keep each shipment ID. Resolve Ship From using the locations in Instructions. Check the dates, ZIPs, pallet counts, weight per pallet, dimensions, commodity and pickup/delivery requirements first. Ask me about missing or conflicting details; don't silently fill them in or move a date. Blank or Unknown does not mean No.\n\nFollow each row's preference. For Compare all, Cheapest or Fastest, compare eligible freight modes for that shipment. Include available LTL carrier alternatives when LTL is requested or eligible. A batch of single-mode rates is not an all-mode comparison, and an FTL Warp rate is not an FTL carrier marketplace comparison. Separate a failed lookup from an unavailable service.\n\nFill Results with one row per returned option: shipment ID, carrier and mode, total USD, included charges, estimated transit/delivery, quote reference and actual expiry, conditions and missing details. Explain the recommendation against our deadline and requirements. Mark unavailable or blocked rows explicitly. If you can't edit the workbook, return a table or CSV with the same headers. Quote only. Do not book, schedule recurring shipments, send messages or change account/payment settings."
+  },
+  {
+    "id": "invoice-review",
+    "title": "Check invoices against what we agreed",
+    "attach": "Freight invoices, their original quotes and any delivery records",
+    "outcome": "A source-backed list of billing differences and service issues to investigate.",
+    "prompt": "Review these freight invoices against their original quotes and delivery records. Match by shipment reference and show the source file/page for each finding. Separate base freight, fuel and extra charges. Flag duplicates, price changes and charges without supporting evidence. Don't label a charge incorrect until the documents support that conclusion.\n\nCompare promised and actual pickup/delivery only where both are documented. List late deliveries, missed appointments and missing proof of delivery separately from price differences. If a record is missing, say what we need instead of guessing. Use Warp records only for shipments linked to my account; don't assume an external invoice can be retrieved through Warp.\n\nGive me a concise review table with shipment, quoted amount, invoiced amount, difference, service evidence, issue and next action. Calculate invoice minus original quote; distinguish potential disputes from confirmed credits. Do not contact anyone, dispute charges, book or change payment/account settings."
+  },
+  {
+    "id": "savings-check",
+    "title": "Find shipments worth shopping again",
+    "attach": "Recent freight bills plus the intake workbook for upcoming comparable shipments",
+    "outcome": "Quoted opportunities with an honest baseline and visible service tradeoffs.",
+    "prompt": "Use these freight bills as historical baselines and quote our upcoming shipments from the attached intake sheet with Warp. Preserve the upcoming pickup dates. Match route, pallet configuration, weight, dimensions, commodity, included charges and service requirements before calculating a difference. Ask for missing facts.\n\nShow the existing carrier's invoiced total next to current Warp and available LTL marketplace options, with source references and the date of each price. FTL has a Warp rate, not a multi-carrier marketplace comparison. For fully matched rows, show baseline minus candidate total in dollars and percent, including when Warp costs more. If charges or requirements aren't comparable, mark Not comparable and don't calculate savings.\n\nCall these quoted opportunities against historical invoices, not realized savings or guaranteed future rates. Don't extrapolate one shipment across annual volume. Include transit estimates, appointment requirements and any available service evidence without inventing carrier quality scores. Quote only. Do not book, send messages or change account/payment settings."
+  },
+  {
+    "id": "appointment",
+    "title": "Price a delivery with special requirements",
+    "attach": "The intake workbook with appointment, liftgate and other requirements filled in",
+    "outcome": "Options that reflect the receiving site's needs, with unresolved responsibilities called out.",
+    "prompt": "Quote the shipment in this intake sheet with its exact delivery deadline and receiving requirements. Include the appointment, liftgate, residential, limited-access or other services we've specified. Ask about any unknown requirement before treating the quote as complete.\n\nCompare eligible options and show total USD, included and excluded services, transit estimates, and whether the deadline can be supported by the returned quote. An appointment charge does not prove the appointment is scheduled. Tell me whether the records explicitly identify who schedules it; otherwise mark that responsibility as needing confirmation with Warp. Do not promise guaranteed delivery from an estimate.\n\nRecommend an option and list the remaining questions before booking. Quote only. Do not book, schedule an appointment, send messages or change account/payment settings."
+  },
+  {
+    "id": "consolidation",
+    "title": "Check whether combining loads helps",
+    "attach": "The intake workbook for shipments that may share a truck",
+    "outcome": "Separate versus combined costs, including combinations that cost more.",
+    "prompt": "Review these upcoming shipments for consolidation or a multi-stop route. Preserve the requested dates and deadlines; ask which pickup/delivery windows are flexible rather than assuming. Check origins, destinations, pallet dimensions, total weight, stacking and receiving requirements before grouping loads.\n\nUse live Warp quote tools to compare feasible combined routes with separate shipments on the same basis. Show which shipment IDs are in each group, the separate total, combined total, quoted difference, transit assumptions, service exclusions and quote references. Keep losing combinations visible. Flag unpriced legs or missing charges and don't report savings for an incomplete comparison.\n\nIf capacity, compatibility or timing can't be confirmed, explain what blocks the group. Quote only. Do not book, schedule recurring shipments, send messages or change account/payment settings."
+  },
+  {
+    "id": "weekly-review",
+    "title": "Review freight cost and service this week",
+    "attach": "This week's shipment records, invoices, original quotes and delivery evidence",
+    "outcome": "A cost and service review with a short, actionable follow-up list.",
+    "prompt": "Review the attached week's freight records, using Warp history where it belongs to my account. State the date range, source coverage and booking-count scope first. Reconcile duplicates and show missing records. Keep external-carrier records separate from Warp records unless you can match them.\n\nSummarize invoiced spend, quote-to-invoice differences, documented on-time versus late deliveries, appointment issues and missing proof of delivery. Show the denominator and evidence behind each service metric; don't infer quality from price or unknown status. Distinguish open estimates from final invoices.\n\nFinish with the top three things to investigate, supporting shipment references and the information needed. Separate quoted cost opportunities, invoiced differences and confirmed credits. Run this review once only; don't create a scheduled task. Do not book, send messages or change account/payment settings."
+  }
+]

@@ -47,7 +47,7 @@ export default function Home() {
         </p>
         <div style={{ display: "flex", gap: 12, marginTop: 30, flexWrap: "wrap" }}>
           <a className="btn" href={INSTALL_GUIDE}>Install guide →</a>
-          <a className="btn btn-ghost" href="/docs">Browse the tools</a>
+          <a className="btn btn-ghost" href="/starter-kit">Templates &amp; starter prompts</a>
         </div>
       </div>
 
