@@ -51,3 +51,6 @@ Then point a domain (e.g. `mcp.wearewarp.com`) at the deployment. Optional env v
 
 For Smithery: publish at https://smithery.ai/new with **MCP Server URL** =
 `https://<your-deployment>/api/mcp` (Server ID `warp-freight`).
+# Freight templates and starter prompts
+
+Operators can start at [the Warp starter kit](https://mcp.wearewarp.com/starter-kit): download the shipment intake workbook and copy a prompt for quotes, invoices, cost comparisons, appointment requirements, consolidation or a weekly service review. The kit works through an assistant connected to Warp; it does not book automatically.

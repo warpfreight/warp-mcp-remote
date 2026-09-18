@@ -77,6 +77,12 @@ export default function Docs() {
         </p>
       </section>
 
+      <section className="card" style={{ padding: 28, marginBottom: 40 }}>
+        <h2 className="h2">Start with a shipment sheet</h2>
+        <p className="muted">Download the intake workbook and copy a prompt for quotes, invoice checks or cost and service reviews. No tool names to learn.</p>
+        <a className="btn" href="/starter-kit">Open the starter kit →</a>
+      </section>
+
       <span className="label">Tools</span>
       <div style={{ marginTop: 18 }}>
         {GROUPS.map((g) => (
