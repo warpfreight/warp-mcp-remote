@@ -68,8 +68,8 @@ export default function Docs() {
         <span className="label">Connect</span>
         <p className="muted" style={{ lineHeight: 1.75, margin: "16px 0 10px", fontSize: 15 }}>
           Add a custom connector pointing at <code className="inline">{MCP_URL}</code>, click Connect, and sign in with
-          your Warp account (OAuth 2.1 + PKCE). The assistant receives an opaque, encrypted token — never your password
-          or raw key.
+          your Warp account (OAuth 2.1 + PKCE). In this Connect flow, the assistant receives an opaque, encrypted token,
+          not your password or raw key.
         </p>
         <p className="muted" style={{ margin: 0, fontSize: 15 }}>
           Step-by-step for Claude Desktop, Claude Code, and ChatGPT:{" "}
@@ -105,9 +105,23 @@ export default function Docs() {
       <section className="card" style={{ padding: 28, marginTop: 12 }}>
         <span className="label">Authentication &amp; data</span>
         <p className="muted" style={{ lineHeight: 1.75, margin: "16px 0 0", fontSize: 15 }}>
-          Authentication is handled entirely by the Connect flow — there is no separate login tool. Tool results are
-          returned only to the AI client you authorized. See the <a className="link" href="/privacy">privacy policy</a> for
-          exactly what is accessed and stored.
+          Use your assistant's connector sign-in to authenticate with this hosted endpoint through OAuth.
+          The shared tool list may include <code className="inline">login</code>, but the hosted connector
+          refuses that tool and directs you to OAuth. The login tool is intended for the local
+          <code className="inline">npx warp-agent-mcp</code> installation. Do not paste your password into chat.
+          Tool results are returned to the AI client you authorized. See the <a className="link" href="/privacy">privacy policy</a>
+          for what is accessed and stored.
+        </p>
+      </section>
+
+      <section className="card" style={{ padding: 28, marginTop: 12 }}>
+        <span className="label">Quotes and booking approval</span>
+        <p className="muted" style={{ lineHeight: 1.75, margin: "16px 0 0", fontSize: 15 }}>
+          Quote tools, including batch quotes, do not book shipments. Booking tools are separate actions that
+          create real shipments. Review the quote and shipment details before authorizing a booking.
+          Your assistant controls its confirmation prompts according to its permissions and settings;
+          an authenticated Warp connection does not itself guarantee a confirmation dialog for each booking.
+          Check those settings before allowing booking actions.
         </p>
       </section>
 
