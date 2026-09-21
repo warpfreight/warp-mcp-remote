@@ -3,7 +3,7 @@ import { AsyncLocalStorage } from "node:async_hooks";
 import { unseal, originOf, now, type AccessToken } from "@/lib/oauth";
 import { isRevoked, anonRateAllow } from "@/lib/kv";
 import { CONNECTOR_UA } from "@/lib/ua";
-// Deep-import the LIVE published tool definitions (pinned to warp-agent-mcp@0.16.0).
+// Deep-import tool definitions from the committed dist/ of the pinned package.
 // No vendoring — bump the dependency to pick up new tool versions.
 // @ts-ignore — package ships dist/*.js without type declarations
 // Version reported to clients in serverInfo. Read from the INSTALLED

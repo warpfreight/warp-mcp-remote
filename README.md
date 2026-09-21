@@ -54,3 +54,12 @@ For Smithery: publish at https://smithery.ai/new with **MCP Server URL** =
 # Freight templates and starter prompts
 
 Operators can start at [the Warp starter kit](https://mcp.wearewarp.com/starter-kit): download the shipment intake workbook and copy a prompt for quotes, invoices, cost comparisons, appointment requirements, consolidation or a weekly service review. The kit works through an assistant connected to Warp; it does not book automatically.
+
+## Optional app-directory domain proof
+
+The `/.well-known/openai-apps-challenge` route returns 404 until
+`OPENAI_APPS_CHALLENGE` is configured. Set it to the exact verification token
+provided by the OpenAI submission portal in this Vercel project's production
+environment, then redeploy. The route returns only the token as `text/plain`
+with `Cache-Control: no-store`. Do not invent a token or replace a token still
+needed by another submission using this host.
