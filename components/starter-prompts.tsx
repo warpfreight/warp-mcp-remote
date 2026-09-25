@@ -10,7 +10,7 @@ export default function StarterPrompts() {
   async function copy() {
     try {
       await navigator.clipboard.writeText(prompt.prompt);
-      setFeedback("Copied. Paste it into your assistant with your files attached.");
+      setFeedback("Copied. Paste it into your assistant and choose your sources or attach your files.");
     } catch {
       setFeedback("Select the prompt below and copy it manually.");
     }
@@ -28,7 +28,7 @@ export default function StarterPrompts() {
       <article className="card starter-prompt">
         <h3>{prompt.title}</h3>
         <p className="muted">{prompt.outcome}</p>
-        <p className="starter-attach"><strong>Attach</strong> {prompt.attach}</p>
+        <p className="starter-attach"><strong>Use</strong> {prompt.attach}</p>
         <label htmlFor="starter-prompt-text" className="label">Your ready-to-copy prompt</label>
         <textarea id="starter-prompt-text" readOnly value={prompt.prompt} spellCheck={false} />
         <button type="button" className="btn" onClick={copy}>Copy prompt <span aria-hidden="true">↗</span></button>
