@@ -43,6 +43,7 @@ const GROUPS: { title: string; tools: [string, string][] }[] = [
       ["warp_lane_history", "Shipping history for your lanes."],
       ["warp_locations", "Saved pickup / delivery addresses."],
       ["warp_analytics", "Bookings and revenue analytics."],
+      ["warp_report_issue", "Report a problem with a Warp tool to the Warp team. Files a report only; changes nothing."],
     ],
   },
   {
