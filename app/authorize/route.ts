@@ -42,66 +42,98 @@ const hiddenParams = (p: P) => FIELDS.map((f) => `<input type="hidden" name="${f
 // entry page (otp) share one card + dithered backdrop. Palette + backdrop notes
 // live with STYLE / DITHER below; each screen only swaps the card body.
 const STYLE = `<style>
+  /* Matches the wearewarp.com hero: Space Grotesk, glass card, inset input wells,
+     and the mint CTA with its sheen sweep and press-down feel. */
   :root{
-    --ink:#0e1622; --ink-2:#131c2a; --ink-3:#1a2332;
-    --border:#253040; --border-strong:#334155;
-    --text:#f0f2f5; --muted:#b0b8c4; --dim:#7a8494;
-    --mint:#4ade80; --mint-bright:#86efac; --mint-deep:#22c55e;
-    --info:#38bdf8; --danger:#ef4444; --logo:#00FF33;
+    --ink:#0c121e; --panel:rgba(19,28,42,.65);
+    --text:#f0f2f5; --muted:rgba(240,242,245,.62); --dim:rgba(240,242,245,.45);
+    --line:rgba(255,255,255,.08); --line-2:rgba(255,255,255,.1);
+    --mint:#4ade80; --danger:#f87171;
+    --ease:cubic-bezier(.22,1,.36,1);
   }
   *{box-sizing:border-box}
   html,body{margin:0;min-height:100vh}
   body{
-    font-family:system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    color:var(--text);
-    background:radial-gradient(120% 90% at 80% -10%,#16283a 0%,var(--ink) 55%,#0a111b 100%);
-    display:flex;align-items:center;justify-content:center;padding:24px;
+    font-family:"Space Grotesk",-apple-system,system-ui,"Segoe UI",sans-serif;
+    color:var(--text);-webkit-font-smoothing:antialiased;
+    background:radial-gradient(120% 90% at 80% -10%,#16283a 0%,#131c2a 55%,#0a111b 100%);
+    display:flex;align-items:center;justify-content:center;padding:24px 16px;
   }
   #dither{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;pointer-events:none}
   .card{
-    position:relative;z-index:1;width:100%;max-width:400px;
-    background:color-mix(in srgb,var(--ink-2) 88%,transparent);
-    border:1px solid var(--border);border-radius:18px;padding:34px 30px 28px;
-    box-shadow:0 1px 0 rgba(255,255,255,.04) inset,0 24px 70px -30px rgba(0,0,0,.85);
-    backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);
+    position:relative;z-index:1;width:100%;max-width:420px;
+    background:radial-gradient(circle at 0 0,rgba(74,222,128,.05),transparent 40%),var(--panel);
+    border:1px solid var(--line-2);border-radius:20px;padding:32px 28px 26px;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 8px 32px rgba(0,0,0,.3);
+    backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
   }
-  .logo{display:block;margin:0 auto 24px;height:32px;width:auto}
-  h1{font-size:20px;font-weight:700;letter-spacing:-.01em;margin:0 0 6px;text-align:center}
-  .sub{font-size:13px;color:var(--muted);line-height:1.6;margin:0 0 18px;text-align:center}
+  .logo{display:block;margin:0 auto 26px;height:26px;width:auto}
+  h1{font-size:26px;font-weight:700;letter-spacing:-.02em;line-height:1.15;margin:0 0 8px;text-align:center}
+  .sub{font-size:14.5px;color:var(--muted);line-height:1.55;margin:0 0 20px;text-align:center}
   .chip{
-    display:flex;align-items:center;justify-content:center;gap:7px;
-    background:var(--ink);border:1px solid var(--border);border-radius:10px;
-    padding:9px 12px;margin:0 0 20px;font-size:12.5px;
+    display:flex;align-items:center;justify-content:center;gap:8px;width:fit-content;max-width:100%;
+    margin:0 auto 22px;padding:7px 14px;border-radius:999px;
+    background:rgba(12,18,30,.7);border:1px solid var(--line);font-size:12.5px;
   }
-  .chip .dot{width:6px;height:6px;border-radius:99px;background:var(--info);flex:0 0 auto}
-  .chip span{color:var(--dim)} .chip strong{color:var(--text);word-break:break-all;font-weight:600}
+  .chip .dot{width:7px;height:7px;border-radius:99px;background:var(--mint);box-shadow:0 0 10px rgba(74,222,128,.7);flex:0 0 auto}
+  .chip span{color:var(--dim)} .chip strong{color:var(--text);font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .err{
-    background:color-mix(in srgb,var(--danger) 12%,transparent);
-    border:1px solid color-mix(in srgb,var(--danger) 42%,transparent);
-    color:#fca5a5;border-radius:10px;padding:10px 12px;font-size:13px;margin:0 0 14px;line-height:1.5;
+    background:rgba(248,113,113,.1);border:1px solid rgba(248,113,113,.35);color:#fecaca;
+    border-radius:10px;padding:10px 12px;font-size:13.5px;margin:0 0 16px;line-height:1.5;
   }
-  label{display:block;font-size:12px;font-weight:600;letter-spacing:.02em;color:var(--dim);margin:0 0 6px;text-transform:uppercase}
+  label{display:block;font-size:10.5px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--dim);margin:0 0 7px 2px}
   input[type=email],input[type=password],input[type=text],input[type=tel]{
-    width:100%;background:var(--ink);border:1px solid var(--border);border-radius:10px;
-    color:var(--text);padding:11px 13px;font-size:14px;margin-bottom:16px;outline:none;
-    transition:border-color .15s,box-shadow .15s;
+    width:100%;height:52px;padding:0 16px;margin-bottom:16px;outline:none;appearance:none;
+    font-family:inherit;font-size:16px;font-weight:500;color:var(--text);caret-color:var(--mint);
+    background:rgba(12,18,30,.7);border:1px solid var(--line);border-radius:10px;
+    box-shadow:inset 0 1px 2px rgba(0,0,0,.45),inset 0 -1px 0 rgba(255,255,255,.03);
+    transition:border-color .2s,box-shadow .2s,background .2s;
   }
-  input:focus{border-color:var(--mint);box-shadow:0 0 0 3px color-mix(in srgb,var(--mint) 22%,transparent)}
+  input::placeholder{color:rgba(176,184,196,.35)}
+  input:focus{
+    background:rgba(12,18,30,.9);border-color:rgba(74,222,128,.5);
+    box-shadow:inset 0 0 0 1px rgba(74,222,128,.4),inset 0 1px 2px rgba(0,0,0,.4),0 0 18px -4px rgba(74,222,128,.35);
+  }
   .row{display:flex;gap:12px} .row > div{flex:1 1 0;min-width:0}
-  .otp{letter-spacing:.5em;text-align:center;font-size:20px;font-weight:600}
+  .otp{letter-spacing:.5em;text-align:center;font-size:22px;font-weight:600}
   .hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
   button{
-    width:100%;background:var(--mint);color:#0b1613;border:none;border-radius:10px;height:46px;
-    font-size:14.5px;font-weight:700;letter-spacing:.01em;cursor:pointer;margin-top:4px;
-    transition:background .15s,transform .06s;
+    position:relative;isolation:isolate;overflow:hidden;cursor:pointer;
+    width:100%;height:52px;margin-top:6px;padding:0 20px;
+    font-family:inherit;font-size:15.2px;font-weight:700;letter-spacing:-.01em;color:#06140b;
+    background-color:var(--mint);
+    background-image:linear-gradient(rgba(255,255,255,.22),rgba(255,255,255,0) 46%,rgba(0,0,0,.14));
+    border:1px solid transparent;border-radius:10px;
+    box-shadow:0 10px 26px rgba(74,222,128,.32),0 2px 10px rgba(74,222,128,.22),inset 0 1px 0 rgba(255,255,255,.45),inset 0 -1px 0 rgba(0,0,0,.12);
+    transition:transform .18s var(--ease),box-shadow .24s ease;
+    -webkit-tap-highlight-color:transparent;touch-action:manipulation;
   }
-  button:hover{background:var(--mint-bright)} button:active{transform:translateY(1px)}
-  .cancel{display:block;text-align:center;margin-top:14px;font-size:13px;color:var(--dim);text-decoration:none}
+  button::after{
+    content:"";position:absolute;top:0;bottom:0;left:-60%;width:45%;z-index:1;pointer-events:none;
+    background:linear-gradient(100deg,transparent,rgba(255,255,255,.55),transparent);
+    transform:translateX(0);animation:glimmer 4.2s var(--ease) 1.2s infinite;
+  }
+  @keyframes glimmer{0%{transform:translateX(0)}22%,100%{transform:translateX(360%)}}
+  button:hover:not(:disabled){
+    transform:translateY(-2px);
+    box-shadow:0 16px 42px rgba(74,222,128,.52),0 0 26px rgba(74,222,128,.3),inset 0 1px 0 rgba(255,255,255,.5),inset 0 -1px 0 rgba(0,0,0,.12);
+  }
+  button:active:not(:disabled),button.pressed{
+    transform:translateY(0) scale(.97);
+    box-shadow:0 2px 8px rgba(74,222,128,.2),inset 0 1px 0 rgba(255,255,255,.2),inset 0 -1px 0 rgba(0,0,0,.12);
+  }
+  button:disabled{opacity:.7;cursor:wait}
+  button.ghost{background:transparent;background-image:none;box-shadow:none;color:var(--dim);height:40px;font-weight:500;font-size:13.5px}
+  button.ghost::after{display:none}
+  .cancel{display:block;text-align:center;margin-top:16px;font-size:13.5px;color:var(--dim);text-decoration:none}
   .cancel:hover{color:var(--muted)}
-  .foot{font-size:12.5px;color:var(--dim);line-height:1.6;text-align:center;margin:20px 0 0}
+  .foot{font-size:13.5px;color:var(--dim);line-height:1.6;text-align:center;margin:20px 0 0}
   .foot a{color:var(--mint);font-weight:600;text-decoration:none;cursor:pointer}
-  .foot a:hover{color:var(--mint-bright)}
-  .fine{font-size:11.5px;color:var(--dim);line-height:1.55;text-align:center;margin:14px 0 0;padding-top:14px;border-top:1px solid var(--border)}
+  .fine{font-size:12px;color:var(--dim);line-height:1.6;text-align:center;margin:18px 0 0;padding-top:16px;border-top:1px solid var(--line)}
+  @media (prefers-reduced-motion: reduce){
+    button,button:hover:not(:disabled),button:active:not(:disabled){transition:none!important;transform:none!important}
+    button::after{animation:none!important}
+  }
 </style>`;
 
 const LOGO = `<svg class="logo" viewBox="0 0 660 186" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Warp">
@@ -114,6 +146,18 @@ const LOGO = `<svg class="logo" viewBox="0 0 660 186" fill="none" xmlns="http://
   <path d="M292.04 76.1794H275.219V94.1557H292.04V76.1794Z" fill="#00FF33"/>
   <path d="M275.219 131.615H292.04V113.84H275.219V131.615Z" fill="#00FF33"/>
 </svg>`;
+
+const PRESS = `<script>
+document.addEventListener("pointerdown", function (e) {
+  var b = e.target.closest && e.target.closest("button");
+  if (!b || b.disabled) return;
+  b.classList.add("pressed");
+  try { if (navigator.vibrate) navigator.vibrate(8); } catch (err) {}
+}, { passive: true });
+["pointerup", "pointercancel", "pointerleave"].forEach(function (t) {
+  document.addEventListener(t, function () { document.querySelectorAll("button.pressed").forEach(function (b) { b.classList.remove("pressed"); }); }, { passive: true });
+});
+</script>`;
 
 const DITHER = `<script>
 (function () {
@@ -203,8 +247,13 @@ function destOf(p: P): { dest: string; deny: string } {
 
 function shell(p: P, opts: { title: string; sub: string; error?: string; body: string; foot: string }): Response {
   const { dest } = destOf(p);
-  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="color-scheme" content="dark"><title>${esc(opts.title)} · Warp</title>
+  const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="dark"><meta name="theme-color" content="#131c2a"><title>${esc(opts.title)} · Warp</title>
+<meta property="og:title" content="Connect your Warp account"><meta property="og:description" content="Sign in or sign up with Warp to connect your freight assistant.">
+<meta property="og:image" content="https://mcp.wearewarp.com/og-connect.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:site_name" content="Warp"><meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
 ${STYLE}</head>
 <body>
   <canvas id="dither" aria-hidden="true"></canvas>
@@ -218,6 +267,7 @@ ${STYLE}</head>
     ${opts.foot}
   </main>
   ${DITHER}
+  ${PRESS}
 </body></html>`;
   return new Response(html, { status: 200, headers: { "Content-Type": "text/html; charset=utf-8" } });
 }
@@ -238,7 +288,7 @@ function loginPage(p: P, errorMsg?: string): Response {
     </form>
     ${deny ? `<a class="cancel" href="${esc(deny)}">Cancel and return</a>` : ""}`;
   const foot = `<p class="foot">New to Warp? <a href="${esc(signupUrl)}">Create an account &rarr;</a></p>
-    <p class="fine">Your password goes only to Warp — never to the assistant. Booking through the assistant charges the card on file with your Warp account.</p>`;
+    <p class="fine">Your password goes only to Warp, never to the assistant. Booking through the assistant charges the card on file with your Warp account.</p>`;
   return shell(p, { title: "Sign in to Warp", sub: "Connect your Warp account so this assistant can quote, book, and track freight on your behalf.", error: errorMsg, body, foot });
 }
 
@@ -333,7 +383,7 @@ function cardPage(p: P, pk: string, clientSecret: string, pending: string, updat
       ${hiddenParams(p)}
       <input type="hidden" name="mode" value="card_skip">
       <input type="hidden" name="pending" value="${esc(pending)}">
-      <button type="submit" style="background:transparent;color:var(--dim);height:38px;font-weight:500;font-size:13px;margin-top:6px">Skip for now</button>
+      <button type="submit" class="ghost">Skip for now</button>
     </form>
     <script src="https://js.stripe.com/v3/"></script>
     <script>
@@ -357,7 +407,7 @@ function cardPage(p: P, pk: string, clientSecret: string, pending: string, updat
       });
     })();
     </script>`;
-  const foot = `<p class="fine">Your card is saved with Stripe on your Warp account &mdash; the same card on file at wearewarp.com. Booking through the assistant charges this card.</p>`;
+  const foot = `<p class="fine">Your card is saved with Stripe on your Warp account, the same card on file at wearewarp.com. Booking through the assistant charges this card.</p>`;
   const title = updating ? "Update your payment method" : "Add a payment method";
   const sub = updating
     ? "Add a new card to replace the one on file. Skip to keep your current card."
