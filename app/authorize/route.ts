@@ -90,6 +90,14 @@ const STYLE = `<style>
     transition:border-color .2s,box-shadow .2s,background .2s;
   }
   input::placeholder{color:rgba(176,184,196,.35)}
+  /* Keep browser autofill on the dark input wells instead of the default tint. */
+  input:-webkit-autofill,input:-webkit-autofill:hover,input:-webkit-autofill:focus{
+    -webkit-text-fill-color:var(--text);caret-color:var(--mint);
+    -webkit-box-shadow:0 0 0 1000px #0e1522 inset,inset 0 1px 2px rgba(0,0,0,.45);
+    transition:background-color 9999s ease-out 0s;
+  }
+  label.check{display:flex;align-items:center;gap:10px;margin:2px 0 8px 2px;font-size:13px;font-weight:400;letter-spacing:normal;text-transform:none;color:var(--muted);cursor:pointer}
+  label.check input{width:16px;height:16px;margin:0;accent-color:var(--mint)}
   input:focus{
     background:rgba(12,18,30,.9);border-color:rgba(74,222,128,.5);
     box-shadow:inset 0 0 0 1px rgba(74,222,128,.4),inset 0 1px 2px rgba(0,0,0,.4),0 0 18px -4px rgba(74,222,128,.35);
@@ -283,7 +291,7 @@ function loginPage(p: P, errorMsg?: string): Response {
       <input id="email" name="email" type="email" autocomplete="email" required autofocus>
       <label for="password">Password</label>
       <input id="password" name="password" type="password" autocomplete="current-password" required>
-      <label style="display:flex;align-items:center;gap:8px;margin:12px 0 4px;font-size:13px;font-weight:400;color:var(--dim);text-transform:none;cursor:pointer"><input type="checkbox" name="update_card" value="1" style="width:auto;margin:0;accent-color:#4ade80"> Update the card on file after signing in</label>
+      <label class="check"><input type="checkbox" name="update_card" value="1"> Update the card on file after signing in</label>
       <button type="submit">Sign in &amp; authorize</button>
     </form>
     ${deny ? `<a class="cancel" href="${esc(deny)}">Cancel and return</a>` : ""}`;
