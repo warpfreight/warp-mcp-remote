@@ -2,6 +2,7 @@ import { unseal, seal, now, CODE_TTL, randomId, type ClientToken, type AuthCode 
 import { loginAndGetKey } from "@/lib/warpAuth";
 import { startSignup, verifySignup, type SignupFields } from "@/lib/warpSignup";
 import { cardIntent, savePaymentMethod } from "@/lib/warpCard";
+import { notifyConnector, clientName, isAlertableFailure } from "@/lib/alerts";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -462,6 +463,7 @@ export async function POST(req: Request) {
 
   const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || undefined;
   const mode = String(form.get("mode") ?? "login");
+  const client = clientName(p.redirect_uri);
 
   if (mode === "signup") {
     const f = fieldsFrom(form);
@@ -471,6 +473,7 @@ export async function POST(req: Request) {
     const r = await startSignup(f, ip);
     if (!r.ok) return signupPage(p, r.error, f);
     if (r.verification_required) return otpPage(p, f, r.challengeId);
+    await notifyConnector({ kind: "new_account", email: f.email, agentId: r.agentId, client });
     return afterAuth(p, { key: r.key, agentId: r.agentId, sessionToken: r.sessionToken, hasCard: false }, ip);
   }
 
@@ -482,6 +485,7 @@ export async function POST(req: Request) {
     if (!otp) return otpPage(p, f, challengeId, "Enter the code from your email.");
     const r = await verifySignup(f, challengeId, otp, ip);
     if (!r.ok) return otpPage(p, f, challengeId, r.error);
+    await notifyConnector({ kind: "new_account", email: f.email, agentId: r.agentId, client });
     return afterAuth(p, { key: r.key, agentId: r.agentId, sessionToken: r.sessionToken, hasCard: false }, ip);
   }
 
@@ -504,7 +508,11 @@ export async function POST(req: Request) {
   const password = String(form.get("password") ?? "");
   if (!email || !password) return loginPage(p, "Enter your email and password.");
   const r = await loginAndGetKey(email, password, ip);
-  if (!r.ok) return loginPage(p, r.error);
+  if (!r.ok) {
+    if (isAlertableFailure(r.error)) await notifyConnector({ kind: "sign_in_failed", email, error: r.error, client });
+    return loginPage(p, r.error);
+  }
+  await notifyConnector({ kind: "signed_in", email: r.email ?? email, agentId: r.agentId, hasCard: r.hasCard, client });
   const forceCard = form.get("update_card") === "1";
   return afterAuth(p, { key: r.key, agentId: r.agentId, sessionToken: r.sessionToken, hasCard: r.hasCard }, ip, forceCard);
 }
