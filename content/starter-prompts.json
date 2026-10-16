@@ -1,5 +1,12 @@
 [
   {
+    "id": "connected-orders",
+    "title": "Find freight opportunities in my connected apps",
+    "attach": "Your connected order or email apps, or an uploaded PO or shipment sheet",
+    "outcome": "Upcoming freight candidates, live options and a clear next step for the shipments worth reviewing.",
+    "prompt": "Help me find a better way to ship my upcoming orders. First tell me which connected apps you can actually read. Ask me which store, mailbox or folder to use and what date range to review. Use only the sources I select. If the relevant app is not connected, guide me to my assistant’s connector settings if supported, or ask me to upload a PO or shipment sheet. Do not claim Warp itself connects to Shopify or email.\n\nRead the selected upcoming orders and shipping records. Identify orders that may need palletized freight; do not assume every ecommerce order needs freight. Show each candidate with its source reference, origin, destination, requested dates and known load details. Separate confirmed orders from inferred recurring patterns. Ask me for missing or conflicting pallet counts, dimensions, weights, commodity, warehouse contacts, dock access and delivery requirements. Never invent them.\n\nOnce the details are sufficient, use Warp to quote the candidates and compare eligible options by total price, timing and delivery requirements. Check feasible consolidation where supported without changing dates or assuming orders can travel together. Include available LTL carrier alternatives; do not describe a Warp FTL rate as an FTL carrier marketplace comparison. Only calculate potential savings against a documented, comparable baseline, including when Warp costs more. If there is no baseline, show options without claiming savings.\n\nPresent a short recommendation: what I should ship, which option fits best and why, the quoted price and expiry, any cost or timing trade-offs, and what still needs confirmation. Finish by asking which shipment I want to review for booking. Do not book until I explicitly approve the specific shipment, price and details. Do not send messages, change orders or account/payment settings, or schedule recurring work. This is a one-time review, not background monitoring."
+  },
+  {
     "id": "shipment-sheet",
     "title": "Quote my shipment sheet",
     "attach": "The completed Warp Shipment Intake workbook",
