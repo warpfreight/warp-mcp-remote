@@ -84,6 +84,8 @@ const handler = createMcpHandler(
       // prefixed deletes stay as belt-and-suspenders for any downgrade).
       delete reg["book"];
       delete reg["batch_book"];
+      // FedEx parcel booking charges like book: never exposed in ChatGPT.
+      delete reg["parcel_book"];
       delete reg["warp_book"];
       delete reg["warp_batch_book"];
       // In-chat email+password login is refused on the hosted connector (OAuth

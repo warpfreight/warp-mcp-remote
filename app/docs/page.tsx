@@ -15,6 +15,7 @@ const GROUPS: { title: string; tools: [string, string][] }[] = [
       ["warp_box_truck_quote", "26′ box truck quote (1–12 pallets)."],
       ["warp_ftl_quote", "Full truckload (53′ dry van) quote."],
       ["warp_batch_quote", "Price many lanes in one call (spreadsheets / CSVs)."],
+      ["parcel_quote", "FedEx parcel rates for small packages: every service and pickup type."],
     ],
   },
   {
@@ -22,6 +23,7 @@ const GROUPS: { title: string; tools: [string, string][] }[] = [
     tools: [
       ["warp_book", "Book a quoted shipment. Charges the card on file at Warp."],
       ["warp_batch_book", "Book several quoted lanes in one call."],
+      ["parcel_book", "Book a FedEx parcel option. Charges the account like book."],
     ],
   },
   {
