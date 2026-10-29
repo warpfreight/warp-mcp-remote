@@ -36,7 +36,7 @@ import { BOOKINGS_CARD_RESOURCE_URI, bookingsCardTemplate } from "warp-agent-mcp
 import { BATCH_QUOTE_CARD_RESOURCE_URI, batchQuoteCardTemplate } from "warp-agent-mcp/dist/widgets/batch-quote-card.js";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 const WARP_API_URL = process.env.WARP_API_URL ?? "https://www.wearewarp.com/api/v1/warp";
 // Public origin of this deployment (where /checkout lives). Overridable for dev.
@@ -86,6 +86,8 @@ const handler = createMcpHandler(
       delete reg["batch_book"];
       // FedEx parcel booking charges like book: never exposed in ChatGPT.
       delete reg["parcel_book"];
+      // International bookings charge the account and cannot be cancelled.
+      delete reg["international_book"];
       delete reg["warp_book"];
       delete reg["warp_batch_book"];
       // In-chat email+password login is refused on the hosted connector (OAuth
@@ -226,7 +228,7 @@ const handler = createMcpHandler(
     instructions:
       "Warp Freight rules for the assistant. (1) When the user only asks for a quote, price, rate, or carrier comparison, do NOT call the book tool and do NOT show, generate, or mention ANY booking link — a quote reply must contain ZERO booking links; simply say you can book it whenever they're ready. (2) Call `book` ONLY after the user explicitly asks to book, confirm, or place the shipment; it returns the only valid booking link (an https://mcp.wearewarp.com/b/... URL) — present that link exactly as returned, and pass the user's pickup and delivery contacts. (3) NEVER send the user to customer.wearewarp.com, www.wearewarp.com, /public/freight-quote, or any URL you construct or recall yourself; those are not booking links. Quotes and tracking are read-only; booking is the only action, only via the `book` tool, only after the user asks.",
   },
-  { basePath: "/api/chatgpt", maxDuration: 60 },
+  { basePath: "/api/chatgpt", maxDuration: 120 },
 );
 
 /** Raw credential from the request (OAuth access token, raw key, or Smithery config). */

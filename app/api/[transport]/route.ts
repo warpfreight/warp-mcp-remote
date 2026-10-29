@@ -26,7 +26,7 @@ import { BATCH_QUOTE_CARD_RESOURCE_URI, BATCH_QUOTE_CARD_MCP_RESOURCE_URI, batch
 import { BATCH_BOOK_CARD_RESOURCE_URI, BATCH_BOOK_CARD_MCP_RESOURCE_URI, batchBookCardTemplate, batchBookCardMcpTemplate } from "warp-agent-mcp/dist/widgets/batch-book-card.js";
 
 export const runtime = "nodejs";
-export const maxDuration = 60;
+export const maxDuration = 120;
 
 const WARP_API_URL = process.env.WARP_API_URL ?? "https://www.wearewarp.com/api/v1/warp";
 
@@ -186,7 +186,7 @@ const handler = createMcpHandler(
       ],
     } as unknown as { name: string; version: string },
   },
-  { basePath: "/api", maxDuration: 60 },
+  { basePath: "/api", maxDuration: 120 },
 );
 
 /** Raw credential from the request (OAuth access token, raw key, or Smithery config). */

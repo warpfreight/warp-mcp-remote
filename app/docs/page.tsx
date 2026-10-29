@@ -27,6 +27,15 @@ const GROUPS: { title: string; tools: [string, string][] }[] = [
     ],
   },
   {
+    title: "International",
+    tools: [
+      ["international_settings", "Whether Air / Ocean is enabled, plus a country's postal and location rules."],
+      ["international_quote", "Air and ocean rates for lanes with an end outside the US / Canada."],
+      ["international_book", "Book an air or ocean option. Cannot be cancelled through the API."],
+      ["international_customs", "Read or add customs data on a booked international order."],
+    ],
+  },
+  {
     title: "Tracking & shipments",
     tools: [
       ["warp_track", "Track a shipment by ID or number."],
