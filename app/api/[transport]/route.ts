@@ -128,20 +128,9 @@ const handler = createMcpHandler(
         if (name === "login") {
           // The in-chat email+password login is for the LOCAL npx install (it
           // persists a key to the machine's own disk). On a shared, serverless
-          // remote it must never run: per-request auth here is OAuth, and
-          // accepting passwords into a multi-tenant lambda is credential
-          // hygiene we refuse on principle. Gated for EVERY session.
-          setImpl(tool, () => ({
-            content: [{
-              type: "text" as const,
-              text:
-                "This hosted connector authenticates with OAuth, not in-chat credentials — " +
-                "never send your Warp password in chat. Use your assistant's connector sign-in — " +
-                "open this connector in your client's settings and complete the sign-in prompt. " +
-                "The `login` tool only exists for the local `npx warp-agent-mcp` install.",
-            }],
-            isError: true,
-          }));
+          // remote the auth path is OAuth and passwords must never transit a
+          // multi-tenant lambda, so the tool is not offered here at all.
+          delete reg[name];
           continue;
         }
         if (ANON_TOOLS.has(name)) continue;

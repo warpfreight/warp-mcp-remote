@@ -10,7 +10,7 @@
  *   3. an anonymous quote tool returns a REAL price (public keyless surface)
  *   4. an anonymous booking tool is REFUSED with a sign-in pointer,
  *      without touching upstream (and without a booking, ever)
- *   5. `login` refuses in-chat credentials and points at OAuth
+ *   5. `login` (in-chat credentials) is not offered on the hosted remote
  *   6. multistop_quote (keyed upstream) is gated for anonymous sessions
  *
  * Usage:
@@ -103,14 +103,9 @@ const bookText = toolText(book.message);
 check("anonymous book is gated", book.message?.result?.isError === true, bookText.slice(0, 120));
 check("gate names the fix (sign in)", /Sign in to Warp/i.test(bookText), bookText.slice(0, 120));
 
-// 5. login refuses in-chat credentials everywhere on the hosted remote.
-const login = await rpc("tools/call", {
-  name: "login",
-  arguments: { email: "smoke@example.com", password: "not-a-real-password" },
-}, { id: 5, session });
-check("login points at OAuth, never accepts credentials",
-  /OAuth/i.test(toolText(login.message)) && login.message?.result?.isError === true,
-  toolText(login.message).slice(0, 120));
+// 5. the in-chat credential login is not offered on the hosted remote (OAuth only).
+check("login is not in the tool list", !tools.some(t => t.name === "login"),
+  tools.some(t => t.name === "login") ? "login is listed" : "absent");
 
 // 6. an account-surface tool (payment_status: no args, auth Yes upstream) is
 //    gated for anonymous sessions. NOTE: schema-INVALID calls to gated tools
