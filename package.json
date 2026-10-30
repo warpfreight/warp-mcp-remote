@@ -15,7 +15,7 @@
     "next": "^14.2.35",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "warp-agent-mcp": "github:warpfreight/warp-agent-mcp#917ea7855376ffb9e1b3fcb9bfc9673f4c894384",
+    "warp-agent-mcp": "github:warpfreight/warp-agent-mcp#fcd55783288a6bf308aa9083b3683c6c4f40cd05",
     "zod": "^3.25.76"
   },
   "devDependencies": {
