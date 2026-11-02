@@ -16,7 +16,7 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "warp-agent-mcp": "github:warpfreight/warp-agent-mcp#c045ee96c6a07938dc296f8750472b339e6742a9",
-    "zod": "^3.25.76"
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@types/node": "^20.19.41",
