@@ -33,6 +33,8 @@ const GROUPS: { title: string; tools: [string, string][] }[] = [
       ["international_quote", "Air and ocean rates for lanes with an end outside the US / Canada."],
       ["international_book", "Book an air or ocean option. Cannot be cancelled through the API."],
       ["international_customs", "Read or add customs data on a booked international order."],
+      ["hs_code_search", "Find the HTS (import) or Schedule B (export) code for a product. No account needed."],
+      ["international_duty_estimate", "Estimate US import duties per line for a landed cost."],
     ],
   },
   {
