@@ -59,6 +59,7 @@ const ANON_TOOLS = new Set([
   "compare_modes",
   "batch_quote",
   "consolidate",
+  "hs_code_search",
   "status",
 ]);
 
